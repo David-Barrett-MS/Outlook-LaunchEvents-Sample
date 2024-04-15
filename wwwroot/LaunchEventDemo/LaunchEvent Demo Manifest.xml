@@ -137,7 +137,7 @@
         </bt:Urls>
         <bt:ShortStrings>
           <bt:String id="GroupLabel" DefaultValue="LaunchEventDemo"/>
-          <bt:String id="TaskpaneButton.Label" DefaultValue="daves.tips LaunchEventDemo"/>
+          <bt:String id="TaskpaneButton.Label" DefaultValue="Contoso LaunchEventDemo"/>
           <!-- <bt:String id="ActionButton.Label" DefaultValue="Perform an action"/> --></bt:ShortStrings>
         <bt:LongStrings>
           <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Open a taskpane to monitor events"/>
