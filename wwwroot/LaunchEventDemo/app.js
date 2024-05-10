@@ -4,7 +4,8 @@
  */
 
 var statusInfo = "";
-var logEventAPI = "";
+var fullLogEventAPIUrl = ""; // The API URL including any additional parameters
+var baseLogEventAPIUrl = ""; // The API URL
 var addinSettings;
 const AddinName = "LaunchEventDemo";
 
@@ -15,26 +16,26 @@ Office.initialize = function () {
 }
 
 /**
- * Reads the add-in settings and updates the logEventAPI variable accordingly.
+ * Reads the add-in settings and updates the fullLogEventAPIUrl variable accordingly.
  */
 function ReadAddinSettings() {
     if (!addinSettings) {
         addinSettings = Office.context.roamingSettings;
     }
 
-    if (logEventAPI == "") {
-        let apiUrl = addinSettings.get("apiUrl");
-        if (apiUrl) {
-            logEventAPI = apiUrl;
-            LogToConsole("API URL read: " + logEventAPI);
+    if (baseLogEventAPIUrl == "") {
+        baseLogEventAPIUrl = addinSettings.get("apiUrl");
+        if (baseLogEventAPIUrl) {
+            fullLogEventAPIUrl = baseLogEventAPIUrl;
+            LogToConsole("API URL read: " + fullLogEventAPIUrl);
         }    
         
         let apiDelay = 0;
         apiDelay = addinSettings.get("apiDelay");
         LogToConsole("API delay: " + apiDelay);
         if (apiDelay > 0) {
-            logEventAPI = logEventAPI + "?DelayInSeconds=" + apiDelay
-            LogToConsole("API URL adjusted: " + logEventAPI);
+            fullLogEventAPIUrl = fullLogEventAPIUrl + "?DelayInSeconds=" + apiDelay
+            LogToConsole("API URL adjusted: " + fullLogEventAPIUrl);
         }
         LogToConsole("Finished reading add-in settings");
     }
@@ -81,12 +82,12 @@ function LogToConsole(data) {
  */
 async function logEvent(eventData, event) {
     ReadAddinSettings();
-    if (logEventAPI != "") {
-        LogToConsole("POST " + logEventAPI);
+    if (baseLogEventAPIUrl != "") {
+        LogToConsole("POST " + baseLogEventAPIUrl);
         eventData = AddinName + ": " + eventData;
         var xhr = new XMLHttpRequest();
-        xhr.timeout = 30000;
-        xhr.open("POST", logEventAPI, true);
+        xhr.timeout = 300000;
+        xhr.open("POST", baseLogEventAPIUrl, true);
         xhr.setRequestHeader("Content-Type", "text/plain; charset=UTF-8"); 
         xhr.send(eventData);    
     }
@@ -104,8 +105,8 @@ async function logEvent(eventData, event) {
  */
 async function logEvent2(eventData, event) {
     ReadAddinSettings();
-    if (logEventAPI != "") {
-        LogToConsole("POST " + logEventAPI);
+    if (fullLogEventAPIUrl != "") {
+        LogToConsole("POST " + fullLogEventAPIUrl);
         eventData = AddinName + ": " + eventData;
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function () {
@@ -118,8 +119,8 @@ async function logEvent2(eventData, event) {
                 }
             }
         }     
-        xhr.timeout = 30000;
-        xhr.open("POST", logEventAPI, true);
+        xhr.timeout = 300000; // The maximum time that Outlook allows for an event based add-in to complete the event
+        xhr.open("POST", fullLogEventAPIUrl, true);
         xhr.setRequestHeader("Content-Type", "text/plain; charset=UTF-8"); 
         xhr.send(eventData);
     } else {

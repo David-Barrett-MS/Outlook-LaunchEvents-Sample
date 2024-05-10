@@ -70,7 +70,6 @@
                       <SupportsPinning>true</SupportsPinning>
                     </Action>
                   </Control>
-                  <!-- <Control xsi:type="Button" id="ActionButton"><Label resid="ActionButton.Label"/><Supertip><Title resid="ActionButton.Label"/><Description resid="ActionButton.Tooltip"/></Supertip><Icon><bt:Image size="16" resid="Icon.16x16"/><bt:Image size="32" resid="Icon.32x32"/><bt:Image size="80" resid="Icon.80x80"/></Icon><Action xsi:type="ExecuteFunction"><FunctionName>action</FunctionName></Action></Control> -->
                 </Group>
               </OfficeTab>
             </ExtensionPoint>
@@ -97,6 +96,52 @@
                 </Group>
               </OfficeTab>
             </ExtensionPoint>
+            <ExtensionPoint xsi:type="AppointmentAttendeeCommandSurface">
+              <OfficeTab id="TabDefault">
+                <Group id="apptReadGroup">
+                  <Label resid="GroupLabel"/>
+                  <Control xsi:type="Button" id="apptReadOpenPaneButton">
+                    <Label resid="TaskpaneButton.Label"/>
+                    <Supertip>
+                      <Title resid="TaskpaneButton.Label"/>
+                      <Description resid="TaskpaneButton.Tooltip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Icon.16x16"/>
+                      <bt:Image size="32" resid="Icon.32x32"/>
+                      <bt:Image size="80" resid="Icon.80x80"/>
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <SourceLocation resid="Taskpane.Url"/>
+                      <SupportsPinning>true</SupportsPinning>
+                    </Action>
+                  </Control>                  
+                </Group>
+              </OfficeTab>
+            </ExtensionPoint>              
+            <ExtensionPoint xsi:type="AppointmentOrganizerCommandSurface">
+              <OfficeTab id="TabDefault">
+                <Group id="apptComposeGroup">
+                  <Label resid="GroupLabel"/>
+                  <Control xsi:type="Button" id="apptComposeOpenPaneButton">
+                    <Label resid="TaskpaneButton.Label"/>
+                    <Supertip>
+                      <Title resid="TaskpaneButton.Label"/>
+                      <Description resid="TaskpaneButton.Tooltip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Icon.16x16"/>
+                      <bt:Image size="32" resid="Icon.32x32"/>
+                      <bt:Image size="80" resid="Icon.80x80"/>
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <SourceLocation resid="Taskpane.Url"/>
+                      <SupportsPinning>true</SupportsPinning>
+                    </Action>
+                  </Control>                  
+                </Group>
+              </OfficeTab>
+            </ExtensionPoint>            
             <ExtensionPoint xsi:type="LaunchEvent">
               <LaunchEvents>                
                 <LaunchEvent Type="OnNewMessageCompose" FunctionName="OnNewMessageComposeHandler"/>
@@ -137,7 +182,7 @@
         </bt:Urls>
         <bt:ShortStrings>
           <bt:String id="GroupLabel" DefaultValue="LaunchEventDemo"/>
-          <bt:String id="TaskpaneButton.Label" DefaultValue="Contoso LaunchEventDemo"/>
+          <bt:String id="TaskpaneButton.Label" DefaultValue="daves.tips LaunchEventDemo"/>
           <!-- <bt:String id="ActionButton.Label" DefaultValue="Perform an action"/> --></bt:ShortStrings>
         <bt:LongStrings>
           <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Open a taskpane to monitor events"/>

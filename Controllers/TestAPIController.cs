@@ -51,7 +51,7 @@ namespace WebAPISample.Controllers
         [HttpPost]
         [Consumes("text/plain")]
         [Produces("text/plain")]
-        public IActionResult LogEventDelayed([FromBody] String EventData, int DelayInSeconds)
+        public IActionResult LogEventDelayed([FromBody] String EventData, int DelayInSeconds = 0)
         {
             if (DelayInSeconds>0)
             {
