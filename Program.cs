@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Mvc;
 using WebAPISample;
+
+bool devMode = false;
 
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
@@ -15,12 +18,24 @@ builder.Services.AddCors(options =>
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+if (devMode)
+{
+    builder.Services.AddControllers().AddMvcOptions(options =>
+        options.Filters.Add(
+            new ResponseCacheAttribute
+            {
+                NoStore = true,
+                Location = ResponseCacheLocation.None
+            }));
+}
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddControllers(o => o.InputFormatters.Insert(o.InputFormatters.Count, new TextPlainInputFormatter()));
+
+builder.Logging.
 
 var app = builder.Build();
 

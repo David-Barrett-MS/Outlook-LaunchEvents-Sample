@@ -11,7 +11,7 @@ const AddinName = "LaunchEventDemo";
 
 //Office.onReady();
 Office.initialize = function () {
-    // This function seems not to be called during OnMessageSend LaunchEvent, so any initialisation here won't work in that scenario
+    // This function is not called during OnMessageSend LaunchEvent in Outlook Desktop, so any initialisation here won't work in that scenario
     ReadAddinSettings();
 }
 
@@ -21,6 +21,8 @@ Office.initialize = function () {
 function ReadAddinSettings() {
     if (!addinSettings) {
         addinSettings = Office.context.roamingSettings;
+    } else {
+        return; // We only need to read the settings once
     }
 
     if (baseLogEventAPIUrl == "") {
@@ -111,7 +113,7 @@ async function logEvent2(eventData, event) {
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function () {
             if (this.readyState == 4) {
-                if (this.status == 200 ) {
+                if (this.status == 200 || (addinSettings.get("blockOnAPIFail") != true)) {
                     event.completed({ allowEvent: true });
                 }
                 else {
@@ -221,7 +223,7 @@ function OnMessageReadWithCustomHeaderHandler(event) {
 
 if (Office.context.platform === Office.PlatformType.PC || Office.context.platform == null) {
     // Associate the events with their respective handlers
-    Office.actions.associate("onMessageSendHandler", onMessageSendHandler);
+    Office.actions.associate("OnMessageSendHandler", onMessageSendHandler);
     Office.actions.associate("OnNewMessageComposeHandler", OnNewMessageComposeHandler);
     Office.actions.associate("OnNewAppointmentOrganizerHandler", OnNewAppointmentOrganizerHandler);
     Office.actions.associate("OnMessageAttachmentsChangedHandler", OnMessageAttachmentsChangedHandler);
