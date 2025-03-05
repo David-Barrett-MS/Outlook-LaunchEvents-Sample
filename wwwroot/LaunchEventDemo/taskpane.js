@@ -41,21 +41,21 @@ Office.initialize = function () {
 
   var apiUrl = addinSettings.get("apiUrl");
   if (apiUrl) {
-    logEventAPI = apiUrl;
+      logEventAPI = apiUrl;
   }
   else {
-    logEventAPI = window.location.origin + "/TestAPI/LogEventDelayed";
-    addinSettings.set("apiUrl", logEventAPI);
-    settingsUpdated = true;
+      logEventAPI = window.location.origin + "/TestAPI/LogEventDelayed";
+      addinSettings.set("apiUrl", logEventAPI);
+      settingsUpdated = true;
   }
 
   var apiDelay = addinSettings.get("apiDelay");
   if (apiDelay > 0) {
-    apiDelayInSeconds = apiDelay;
-  } else if (apiDelay == null) {
-    apiDelayInSeconds = 0;
-    addinSettings.set("apiDelay", apiDelayInSeconds);
-    settingsUpdated = true;
+      apiDelayInSeconds = apiDelay;
+  } else if (apiDelay==null) {
+      apiDelayInSeconds = 0;
+      addinSettings.set("apiDelay", apiDelayInSeconds);
+      settingsUpdated = true;
   }
 
   settingsUpdated = settingsUpdated | InitialiseAddinOption("blockOnAPIFail");
@@ -80,7 +80,7 @@ Office.initialize = function () {
 
   showAddinSetting("showEventsOnMessage");
   var showEventsOnMessageCheckbox = document.getElementById("showEventsOnMessageCheckbox");
-  showEventsOnMessageCheckbox.addEventListener("change", checkboxChanged);
+  showEventsOnMessageCheckbox.addEventListener("change", checkboxChanged); 
 
   document.getElementById("apiUrlInput").value = apiUrl;
 
@@ -96,13 +96,13 @@ Office.initialize = function () {
  * Updates the delay for the API call.
  */
 function UpdateApiDelay() {
-  console.log("UpdateApiDelay called");
-  var apiDelay = document.getElementById("apiDelayInput").value;
-  if (apiDelay != apiDelayInSeconds) {
-    apiDelayInSeconds = Number(apiDelay);
-    addinSettings.set("apiDelay", apiDelayInSeconds);
-    addinSettings.saveAsync(null);
-  }
+    console.log("UpdateApiDelay called");
+    var apiDelay = document.getElementById("apiDelayInput").value;
+    if (apiDelay != apiDelayInSeconds) {
+        apiDelayInSeconds = Number(apiDelay);
+        addinSettings.set("apiDelay", apiDelayInSeconds);
+        addinSettings.saveAsync(null);
+    }
 }
 
 function InitialiseAddinOption(settingName) {
@@ -188,7 +188,7 @@ function openURL(linkToOpen) {
   } else {
     console.log(`Opening ${linkToOpen} using window.open`);
     window.open(linkToOpen, "_blank", "noopener,noreferrer");
-  }
+  }  
 }
 
 const openFolderLocationInWeb = async () => {
