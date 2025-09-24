@@ -23,7 +23,8 @@ const openExternalURLViaParent = async () => {
 
 
 const openExternalURL = async () => {
-  console.log(`Opening external URL directly: ${externalLink}`);
-  
+  console.log(`Opening external URL using window.open: ${externalLink}`);  
   window.open(externalLink, "_blank", "noopener,noreferrer");
+  //console.log(`Opening external URL using Office openBrowserWindow: ${externalLink}`);
+  //Office.context.ui.openBrowserWindow(externalLink);
 };

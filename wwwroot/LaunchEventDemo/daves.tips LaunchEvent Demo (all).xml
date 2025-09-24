@@ -8,9 +8,7 @@
   <ProviderName>daves.tips</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="daves.tips LaunchEventDemo"/>
-  <Description DefaultValue="POSTs all received JS events to a REST API that logs the data (displays it in a console on the web-server, data is not persisted anywhere).  Includes other tests (accessed via the Taskpane)."/>
-  <IconUrl DefaultValue="https://apps1.daves.tips/LaunchEventDemo/assets/icon-64.png"/>
-  <HighResolutionIconUrl DefaultValue="https://apps1.daves.tips/LaunchEventDemo/assets/icon-64.png"/>
+  <Description DefaultValue="POSTs all received events to a REST API that logs the data."/>
   <SupportUrl DefaultValue="https://apps1.daves.tips"/>
   <AppDomains>
     <AppDomain>https://apps1.daves.tips</AppDomain>
@@ -20,7 +18,7 @@
   </Hosts>
   <Requirements>
     <Sets>
-      <Set Name="Mailbox" MinVersion="1.1"/>
+      <Set Name="Mailbox" MinVersion="1.5"/>
     </Sets>
   </Requirements>
   <FormSettings>
@@ -71,6 +69,7 @@
                     <Action xsi:type="ShowTaskpane">
                       <SourceLocation resid="Taskpane.Url"/>
                       <SupportsPinning>true</SupportsPinning>
+                      <SupportsNoItemContext>true</SupportsNoItemContext>
                     </Action>
                   </Control>
                   <!-- <Control xsi:type="Button" id="ActionButton"><Label resid="ActionButton.Label"/><Supertip><Title resid="ActionButton.Label"/><Description resid="ActionButton.Tooltip"/></Supertip><Icon><bt:Image size="16" resid="Icon.16x16"/><bt:Image size="32" resid="Icon.32x32"/><bt:Image size="80" resid="Icon.80x80"/></Icon><Action xsi:type="ExecuteFunction"><FunctionName>action</FunctionName></Action></Control> -->
@@ -158,14 +157,17 @@
                 <LaunchEvent Type="OnAppointmentRecurrenceChanged" FunctionName="OnAppointmentRecurrenceChangedHandler"/>
                 <LaunchEvent Type="OnInfoBarDismissClicked" FunctionName="OnInfoBarDismissClickedHandler"/>
                 <LaunchEvent Type="OnMessageSend" FunctionName="onMessageSendHandler" SendMode="PromptUser"/>
-                <LaunchEvent Type="OnAppointmentSend" FunctionName="OnAppointmentSendHandler" SendMode="SoftBlock"/>
+                <LaunchEvent Type="OnAppointmentSend" FunctionName="OnAppointmentSendHandler" SendMode="PromptUser"/>
                 <LaunchEvent Type="OnMessageCompose" FunctionName="OnMessageComposeHandler"/>
                 <LaunchEvent Type="OnAppointmentOrganizer" FunctionName="OnAppointmentOrganizerHandler"/>
                 <LaunchEvent Type="OnMessageFromChanged" FunctionName="OnMessageFromChangedHandler"/>
                 <LaunchEvent Type="OnAppointmentFromChanged" FunctionName="OnAppointmentFromChangedHandler"/>
                 <LaunchEvent Type="OnSensitivityLabelChanged" FunctionName="OnSensitivityLabelChangedHandler"/>
-                <!-- <LaunchEvent Type="OnMessageReadWithCustomAttachment" FunctionName="OnMessageReadWithCustomAttachmentHandler"/>
-                <LaunchEvent Type="OnMessageReadWithCustomHeader" FunctionName="OnMessageReadWithCustomHeaderHandler"/> -->
+                <!-- 
+                The following events are only available in the Preview API.
+                <LaunchEvent Type="OnMessageReadWithCustomAttachment" FunctionName="OnMessageReadWithCustomAttachmentHandler"/>
+                <LaunchEvent Type="OnMessageReadWithCustomHeader" FunctionName="OnMessageReadWithCustomHeaderHandler"/>
+                -->
               </LaunchEvents>
               <SourceLocation resid="Commands.Url"/>
             </ExtensionPoint>
@@ -192,12 +194,6 @@
           <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Open a taskpane to monitor events"/>
           <!-- <bt:String id="ActionButton.Tooltip" DefaultValue="Perform an action when clicked."/> --></bt:LongStrings>
       </Resources>
-        <EquivalentAddins>
-	        <EquivalentAddin>
-		        <ProgId>InspectorEvents</ProgId>
-		        <Type>COM</Type>
-	        </EquivalentAddin>
-        </EquivalentAddins>
     </VersionOverrides>
   </VersionOverrides>
 </OfficeApp>

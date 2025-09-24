@@ -29,6 +29,17 @@ let apiDelayInSeconds = 0;
  */
 let blockOnAPIFail = false;
 
+function FormatLog(data) {
+    // Return log with add-in name and current time prepended
+    var currentdate = new Date(); 
+    var datetime = currentdate.getDate() + "/"
+                + (currentdate.getMonth()+1)  + "/" 
+                + currentdate.getFullYear() + " @ "  
+                + currentdate.getHours() + ":"  
+                + currentdate.getMinutes() + ":" 
+                + currentdate.getSeconds();
+    return AddinName + " " + datetime + ": " + data;
+}
 
 /**
  * The Office.initialize function that gets called when the Office.js library is loaded.
@@ -64,9 +75,9 @@ Office.initialize = function () {
 
   if (settingsUpdated) {
     addinSettings.saveAsync(null);
-    console.log("Settings written");
+    console.log(FormatLog("Settings written"));
   } else {
-    console.log("Settings read");
+    console.log(FormatLog("Settings read"));
   }
 
 
@@ -90,13 +101,22 @@ Office.initialize = function () {
 
   document.getElementById("openLink").onclick = openFolderLocationInWeb; // Add the click event for the new button
   document.getElementById("openDialog").onclick = openOfficeDialog;
+  document.getElementById("applyInsightMessage").onclick = applyInsightMessage;
+
+  // Set up the ItemChanged event.
+  if (Office.context.mailbox.item == null) {
+    console.log(FormatLog("Item is null"));
+  }
+  Office.context.mailbox.addHandlerAsync(Office.EventType.ItemChanged, itemChanged);
+  console.log(FormatLog("ItemChanged event handler added"));
+  updateTaskPaneUI(Office.context.mailbox.item);
 }
 
 /**
  * Updates the delay for the API call.
  */
 function UpdateApiDelay() {
-    console.log("UpdateApiDelay called");
+    console.log(FormatLog("UpdateApiDelay called"));
     var apiDelay = document.getElementById("apiDelayInput").value;
     if (apiDelay != apiDelayInSeconds) {
         apiDelayInSeconds = Number(apiDelay);
@@ -112,67 +132,51 @@ function InitialiseAddinOption(settingName) {
     addinSettings.set(settingValue, false);
     settingChanged = true;
   }
-  console.log(settingName + " value: " + settingValue);
   return settingChanged;
-}
-
-function updateBlockOnAPIFail() {
-  console.log("updateBlockOnAPIFail called");
-  var blockOnAPIFailCheckbox = document.getElementById("blockOnAPIFailCheckbox");
-  blockOnAPIFail = blockOnAPIFailCheckbox.checked;
-  console.log("blockOnAPIFail set: " + blockOnAPIFail);
-  addinSettings.set("blockOnAPIFail", blockOnAPIFail);
-  addinSettings.saveAsync(null);
-}
-
-function obtainAppointmentIdChange() {
-  console.log("obtainAppointmentId called");
-  var obtainAppointmentIdCheckbox = document.getElementById("obtainAppointmentIdCheckbox");
-  obtainAppointmentId = obtainAppointmentIdCheckbox.checked;
-  console.log("obtainAppointmentId set: " + obtainAppointmentId);
-  addinSettings.set("obtainAppointmentId", obtainAppointmentId);
-  addinSettings.saveAsync(null);
 }
 
 function showAddinSetting(settingName) {
   var checkboxName = settingName + "Checkbox";
   var checkbox = document.getElementById(checkboxName);
   if (checkbox == null) {
-    console.log("Couldn't locate " + checkboxName);
+    console.log(FormatLog("Couldn't locate " + checkboxName));
+    return;
+  }
+
+  var checkboxLabel = document.getElementById(checkboxName + "Label");
+  if (checkboxLabel == null) {
+    console.log(FormatLog("Couldn't locate " + checkboxName + "Label"));
     return;
   }
 
   var addinSettingValue = addinSettings.get(settingName);
-  console.log(settingName + " read from add-in: " + addinSettingValue);
-
-  console.log(checkboxName + " aria-checked value: " + checkbox.getAttribute("aria-checked"));
+  console.log(FormatLog(settingName + " read from add-in: " + addinSettingValue));
 
   if ((addinSettingValue == "true" || addinSettingValue == true) && !checkbox.checked) {
-    console.log("Ticking " + checkboxName);
+    //console.log(FormatLog("Ticking " + checkboxName));
     checkbox.checked = true;
-    checkbox.setAttribute("aria-checked", true)
+    checkboxLabel.classList.add("is-checked");
   }
   else if ((addinSettingValue == "false" || addinSettingValue == false) && checkbox.checked) {
-    console.log("Unticking " + checkboxName);
+    //console.log(FormatLog("Unticking " + checkboxName));
     checkbox.checked = false;
-    checkbox.setAttribute("aria-checked", false)
+    checkbox.classList.remove("is-checked");
   }
   else {
-    console.log(checkboxName + " is displaying correct value");
+    //console.log(FormatLog(checkboxName + " is displaying correct value"));
   }
 }
 
 function applyCheckboxSetting(settingName) {
   var checkbox = document.getElementById(settingName + "Checkbox");
-  console.log(checkbox);
-  checkboxChecked = checkbox.checked;
-  console.log(settingName + " set: " + checkboxChecked);
+  var checkboxChecked = checkbox.checked;
+  console.log(FormatLog(settingName + " set: " + checkboxChecked));
   addinSettings.set(settingName, checkboxChecked);
 }
 
-function checkboxChanged() {
+export function checkboxChanged() {
   // Called when any checkbox is changed from the UI (we read all checkbox values and set them)
-  console.log("checkboxChanged called - reading add-in settings from UI");
+  console.log(FormatLog("checkboxChanged called - reading add-in settings from UI"));
 
   applyCheckboxSetting("blockOnAPIFail");
   applyCheckboxSetting("obtainAppointmentId");
@@ -183,23 +187,23 @@ function checkboxChanged() {
 
 function openURL(linkToOpen) {
   if (Office.context.ui && Office.context.ui.openBrowserWindow) {
-    console.log(`Opening ${linkToOpen} using openBrowserWindow`);
+    console.log(FormatLog(`Opening ${linkToOpen} using openBrowserWindow`));
     Office.context.ui.openBrowserWindow(linkToOpen);
   } else {
-    console.log(`Opening ${linkToOpen} using window.open`);
+    console.log(FormatLog(`Opening ${linkToOpen} using window.open`));
     window.open(linkToOpen, "_blank", "noopener,noreferrer");
   }  
 }
 
 const openFolderLocationInWeb = async () => {
-  console.log(`Open external link clicked`);
+  console.log(FormatLog("Open external link clicked"));
   openURL(externalLink);
 };
 
 const openOfficeDialog = async () => {
   let url = getAbsoluteURL(window.location.origin + window.location.pathname, "./dialog.html");
 
-  const dialogOptions = { displayInIframe: false, height: 70, width: 50 };
+  const dialogOptions = { displayInIframe: true, height: 70, width: 50 };
 
   showDialog(url, dialogOptions, false).then((dialog) => {
     dialog.addEventHandler(Office.EventType.DialogMessageReceived, (args) => {
@@ -209,14 +213,14 @@ const openOfficeDialog = async () => {
 };
 
 function processMessage(arg) {
-  console.log(arg);
-  console.log(`Message received from dialog`);
+  console.log(FormatLog(arg));
+  console.log(FormatLog("Message received from dialog"));
 
   if (arg.startsWith("http")) {
     // Open the external URL sent from the dialog
     openURL(arg);
   } else {
-    console.log(`Unhandled message: ${arg}`);
+    console.log(FormatLog(`Unhandled message: ${arg}`));
   }
 }
 
@@ -226,10 +230,10 @@ function openURLInBrowser() {
   // Check if openBrowserWindow is available (indicating we're in OWA or New Outlook)
   if (Office.context.ui && Office.context.ui.openBrowserWindow) {
     Office.context.ui.openBrowserWindow(externalLink);
-    console.log(`Opening ${externalLink} in OWA`);
+    console.log(FormatLog(`Opening ${externalLink} in OWA`));
   } else {
     window.open(externalLink, "_blank", "noopener,noreferrer");
-    console.log(`Opening ${externalLink} in Outlook classic`);
+    console.log(FormatLog(`Opening ${externalLink} in Outlook classic`));
   }
 }
 
@@ -272,4 +276,96 @@ function getAbsoluteURL(base, relative) {
   }
 
   return stack.join("/");
+}
+
+
+async function getInsightMessage() {
+  return {
+    type: Office.MailboxEnums.ItemNotificationMessageType.InsightMessage,
+    message: "This is an InsightMessage",
+    icon: "Icon.16x16",
+    actions: [
+      {
+        actionText: "Process manually",
+        actionType: Office.MailboxEnums.ActionType.ShowTaskPane,
+        commandId: "msgComposeOpenPaneButton",
+        contextData: "{}"
+      }
+    ]
+  };
+}
+
+const applyInsightMessage = async () => {
+  const notification = await getInsightMessage();
+
+  console.log(FormatLog("Applying InsightMessage (from TaskPane button):", notification));
+  Office.context.mailbox.item.notificationMessages.replaceAsync("InsightMessage", notification, (asyncResult) => {
+    if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+      console.error("Failed to apply InsightMessage:", asyncResult.error.message);
+      return;
+    }
+    console.log(FormatLog("InsightMessage applied"));
+  });  
+}
+
+// This function is called when the item changes in the task pane.
+function itemChanged(eventArgs) {
+  // Update UI based on the new current item.
+  console.log(FormatLog("ItemChanged event fired"));
+  updateTaskPaneUI(Office.context.mailbox.item);
+}
+
+/**
+ * Write the current item's subject to the TaskPane
+ */
+function showSubject(subject) {
+    var messageSubject = document.getElementById("messageSubjectInput");
+    messageSubject.value = subject;
+}
+
+// This function updates the task pane UI based on the current item.
+// All we actually do is write the subject to the console, but you could update the UI in other ways.
+function updateTaskPaneUI(item) {
+  if (item == null) {
+    console.log(FormatLog("Item is null, unable to read subject"));
+    return;
+  }
+
+  // Because we are using the same TaskPane in both compose and read modes, we need to check which mode we are in.
+  // Easy test for this is to check the type of the subject property (it will only be a string in read mode).
+
+  // Test for read mode
+  if (typeof item.subject === "string") {
+    // If the subject is a string, we are in read mode.
+    console.log(FormatLog("Item subject (read mode): " + item.subject));
+    showSubject(item.subject);
+    console.log(FormatLog("Item recipients (read mode):"));
+    const msgTo = item.to;
+    for (let i = 0; i < msgTo.length; i++) {
+      console.log(FormatLog(msgTo[i].displayName + " (" + msgTo[i].emailAddress + ")"));
+    }    
+    return;
+  }
+  
+  // We are in compose mode
+  item.subject.getAsync((asyncResult) => {
+        if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+            write(asyncResult.error.message);
+            return;
+        }
+        console.log(FormatLog("Item subject (compose mode): " + asyncResult.value));
+        showSubject(asyncResult.value);
+
+        Office.context.mailbox.item.to.getAsync(function(asyncResult) {
+          if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+            const msgTo = asyncResult.value;
+            console.log(FormatLog("Item recipients (compose mode):"));
+            for (let i = 0; i < msgTo.length; i++) {
+              console.log(FormatLog(msgTo[i].displayName + " (" + msgTo[i].emailAddress + ")"));
+            }
+          } else {
+            console.error(asyncResult.error);
+          }
+        });        
+      });    
 }

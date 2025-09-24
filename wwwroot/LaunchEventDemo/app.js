@@ -43,6 +43,39 @@ function ReadAddinSettings() {
     }
 }
 
+async function getInsightMessage() {
+  return {
+    type: Office.MailboxEnums.ItemNotificationMessageType.InsightMessage,
+    message: "This is an InsightMessage",
+    icon: "Icon.16x16",
+    actions: [
+      {
+        actionText: "Open TaskPane",
+        actionType: Office.MailboxEnums.ActionType.ShowTaskPane,
+        commandId: "msgComposeOpenPaneButton",
+        contextData: "{}"
+      }
+    ]
+  };
+}
+
+async function applyInsightMessage(event) {
+  const notification = await getInsightMessage();
+
+  console.log("Applying InsightMessage:", notification);
+  Office.context.mailbox.item.notificationMessages.replaceAsync("InsightMessage", notification, (asyncResult) => {
+    if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+      console.error("Failed to apply InsightMessage:", asyncResult.error.message);
+      return;
+    }
+    console.log("InsightMessage applied");
+  });  
+
+  if (event) {
+    event.completed();
+  }
+}
+
 /**
  * Set notification on MailItem (overwrites any previous notification)
  * @param {Notification message to be set} message 
@@ -84,6 +117,7 @@ function LogToConsole(data) {
  */
 async function logEvent(eventData, event) {
     ReadAddinSettings();
+    LogToConsole(eventData + " received");
     if (baseLogEventAPIUrl != "") {
         LogToConsole("POST " + baseLogEventAPIUrl);
         eventData = AddinName + ": " + eventData;
@@ -107,37 +141,52 @@ async function logEvent(eventData, event) {
  */
 async function logEvent2(eventData, event) {
     ReadAddinSettings();
+    LogToConsole(eventData + " received");
     if (fullLogEventAPIUrl != "") {
         LogToConsole("POST " + fullLogEventAPIUrl);
         eventData = AddinName + ": " + eventData;
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function () {
             if (this.readyState == 4) {
-                if (this.status == 200 || (addinSettings.get("blockOnAPIFail") != true)) {
+                if (event != null && (this.status == 200 || (addinSettings.get("blockOnAPIFail") != true)) ) {
                     event.completed({ allowEvent: true });
                 }
-                else {
+                else if (event != null) {
                     event.completed({ allowEvent: false, errorMessage:"Failed to contact API" });
                 }
             }
-        }     
+        }
         xhr.timeout = 300000; // The maximum time that Outlook allows for an event based add-in to complete the event
         xhr.open("POST", fullLogEventAPIUrl, true);
         xhr.setRequestHeader("Content-Type", "text/plain; charset=UTF-8"); 
         xhr.send(eventData);
     } else {
-        event.completed({ allowEvent: false, errorMessage:"API URL not set - open TaskPane to configure" });
+        if (event != null) {
+            event.completed({ allowEvent: false, errorMessage:"API URL not set - open TaskPane to configure" });
+        }
     }
 }
 
 // <LaunchEvent Type="OnMessageSend" FunctionName="onMessageSendHandler" SendMode="SoftBlock"/>
 function onMessageSendHandler(event) {
-    logEvent2("OnMessageSend", event);
+    //applyInsightMessage(null);
+    logEvent2("OnMessageSend", null).then(() => {
+        event.completed({ allowEvent: true });
+    })
+}
+
+
+// <LaunchEvent Type="OnAppointmentSend" FunctionName="OnAppointmentSendHandler" SendMode="Block"/>
+function OnAppointmentSendHandler(event) {
+    //applyInsightMessage(null);
+    logEvent2("OnAppointmentSend", event);
 }
 
 // <LaunchEvent Type="OnNewMessageCompose" FunctionName="OnNewMessageComposeHandler"/>
 function OnNewMessageComposeHandler(event) {
-    logEvent("OnNewMessageCompose", event);
+    logEvent("OnNewMessageCompose", null).then(() => {
+        event.completed({ allowEvent: false });
+    })
 }
 
 //<LaunchEvent Type="OnNewAppointmentOrganizer" FunctionName="OnNewAppointmentOrganizerHandler"/>
@@ -180,10 +229,6 @@ function OnInfoBarDismissClickedHandler(event) {
     logEvent("OnInfoBarDismissClicked", event);
 }
 
-// <LaunchEvent Type="OnAppointmentSend" FunctionName="OnAppointmentSendHandler" SendMode="Block"/>
-function OnAppointmentSendHandler(event) {
-    logEvent2("OnAppointmentSend", event);
-}
 
 // <LaunchEvent Type="OnMessageCompose" FunctionName="OnMessageComposeHandler"/>
 function OnMessageComposeHandler(event) {

@@ -8,7 +8,14 @@
     <title>No UI</title>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.debug.js"></script>
-    <script type="module" src="taskpane.js"></script>
+    <!-- <script type="module" src="taskpane.js"></script> -->
+    <script type="text/javascript">
+        const module = {};
+    </script>
+    <script type="module">
+        import { checkboxChanged } from "./taskpane.js";
+        module.checkboxChangedHandler = checkboxChanged;
+    </script>    
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.min.css" />
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.components.min.css" />
     <script src="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/js/fabric.min.js"></script>
@@ -18,7 +25,13 @@
     <header class="ms-welcome__header ms-bgColor-neutralLighter">
         <!-- <img width="90" height="90" src="assets/logo-filled.png" alt="daves.tips" title="daves.tips" /> -->
         <h1 class="ms-font-su">LaunchEventDemo</h1>
-    </header>    
+    </header>
+    <section class="ms-font-m">
+        <h3>Message Details</h3>
+        <div class="ms-TextField">
+            <label class="ms-Label">Message Subject</label>
+            <input id="messageSubjectInput" class="ms-TextField-field" type="text" value="" placeholder="">
+    </section>
     <section class="ms-font-m">
         <h3>API Settings</h3>
         <div class="ms-TextField">
@@ -31,19 +44,19 @@
         </div>
         <div class="ms-CheckBox">
             <input id="blockOnAPIFailCheckbox" type="checkbox" class="ms-CheckBox-input">
-            <label role="checkbox" class="ms-CheckBox-field" name="blockOnAPIFailCheckboxLabel">
+            <label role="checkbox" class="ms-CheckBox-field" id="blockOnAPIFailCheckboxLabel">
                 <span class="ms-Label">Block send if API call fails</span>
             </label>
         </div>
         <div class="ms-CheckBox">
             <input id="obtainAppointmentIdCheckbox" type="checkbox" class="ms-CheckBox-input">
-            <label role="checkbox" class="ms-CheckBox-field" name="obtainAppointmentIdCheckboxLabel">
+            <label role="checkbox" class="ms-CheckBox-field" id="obtainAppointmentIdCheckboxLabel">
                 <span class="ms-Label">Log appointment Id of the item (if new item, force save to obtain one)</span>
             </label>
         </div>
         <div class="ms-CheckBox">
             <input id="showEventsOnMessageCheckbox" type="checkbox" class="ms-CheckBox-input">
-            <label role="checkbox" class="ms-CheckBox-field" name="showEventsOnMessageCheckboxLabel">
+            <label role="checkbox" class="ms-CheckBox-field" id="showEventsOnMessageCheckboxLabel">
                 <span class="ms-Label">Add events to the notification bar of the displayed message.</span>
             </label>
         </div>
@@ -59,15 +72,21 @@
         <div role="button" id="openDialog" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
             <span class="ms-Button-label">Open Office Dialog</span>
         </div>
+
+        <!-- Apply InsightMessage to current item -->
+        <div role="button" id="applyInsightMessage" class="ms-Button ms-Button--hero ms-font-xl">
+            <span class="ms-Button-label">Apply InsightMessage</span>
+        </div>        
     </section>
     <script type="text/javascript">
+        //import { checkboxChanged } from './taskpane.js';
         var TextFieldElements = document.querySelectorAll(".ms-TextField");
         for (var i = 0; i < TextFieldElements.length; i++) {
             new fabric['TextField'](TextFieldElements[i]);
         }
         var CheckBoxElements = document.querySelectorAll(".ms-CheckBox");
         for (var i = 0; i < CheckBoxElements.length; i++) {
-            new fabric['CheckBox'](CheckBoxElements[i], checkboxChanged);
+            new fabric['CheckBox'](CheckBoxElements[i], module.checkboxChangedHandler);
         }        
         console.log("Fabric applied");
     </script>       
