@@ -32,10 +32,7 @@ let blockOnAPIFail = false;
 function FormatLog(data) {
     // Return log with add-in name and current time prepended
     var currentdate = new Date(); 
-    var datetime = currentdate.getDate() + "/"
-                + (currentdate.getMonth()+1)  + "/" 
-                + currentdate.getFullYear() + " @ "  
-                + currentdate.getHours() + ":"  
+    var datetime = currentdate.getHours() + ":"  
                 + currentdate.getMinutes() + ":" 
                 + currentdate.getSeconds();
     return AddinName + " " + datetime + ": " + data;

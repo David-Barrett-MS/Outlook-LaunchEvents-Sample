@@ -29,17 +29,17 @@ function ReadAddinSettings() {
         baseLogEventAPIUrl = addinSettings.get("apiUrl");
         if (baseLogEventAPIUrl) {
             fullLogEventAPIUrl = baseLogEventAPIUrl;
-            LogToConsole("API URL read: " + fullLogEventAPIUrl);
+            console.log(FormatLog("API URL read: " + fullLogEventAPIUrl));
         }    
         
         let apiDelay = 0;
         apiDelay = addinSettings.get("apiDelay");
-        LogToConsole("API delay: " + apiDelay);
+        console.log(FormatLog("API delay: " + apiDelay));
         if (apiDelay > 0) {
             fullLogEventAPIUrl = fullLogEventAPIUrl + "?DelayInSeconds=" + apiDelay
-            LogToConsole("API URL adjusted: " + fullLogEventAPIUrl);
+            console.log(FormatLog("API URL adjusted: " + fullLogEventAPIUrl));
         }
-        LogToConsole("Finished reading add-in settings");
+        console.log(FormatLog("Finished reading add-in settings"));
     }
 }
 
@@ -62,13 +62,13 @@ async function getInsightMessage() {
 async function applyInsightMessage(event) {
   const notification = await getInsightMessage();
 
-  console.log("Applying InsightMessage:", notification);
+  console.log(FormatLog("Applying InsightMessage:", notification));
   Office.context.mailbox.item.notificationMessages.replaceAsync("InsightMessage", notification, (asyncResult) => {
     if (asyncResult.status === Office.AsyncResultStatus.Failed) {
       console.error("Failed to apply InsightMessage:", asyncResult.error.message);
       return;
     }
-    console.log("InsightMessage applied");
+    console.log(FormatLog("InsightMessage applied"));
   });  
 
   if (event) {
@@ -101,12 +101,17 @@ async function SetStatus(message) {
         statusInfo = statusInfo + " | ";    
     }
     statusInfo = statusInfo + message;
-    console.log(message);
+    console.log(FormatLog(message));
     return SetNotification(statusInfo);
 }
 
-function LogToConsole(data) {
-    console.log(AddinName + ": " + data);
+function FormatLog(data) {
+    // Return log with add-in name and current time prepended
+    var currentdate = new Date(); 
+    var datetime = currentdate.getHours() + ":"  
+                + currentdate.getMinutes() + ":" 
+                + currentdate.getSeconds();
+    return AddinName + " " + datetime + ": " + data;
 }
 
 /**
@@ -117,9 +122,9 @@ function LogToConsole(data) {
  */
 async function logEvent(eventData, event) {
     ReadAddinSettings();
-    LogToConsole(eventData + " received");
+    console.log(FormatLog(eventData + " received"));
     if (baseLogEventAPIUrl != "") {
-        LogToConsole("POST " + baseLogEventAPIUrl);
+        console.log(FormatLog("POST " + baseLogEventAPIUrl));
         eventData = AddinName + ": " + eventData;
         var xhr = new XMLHttpRequest();
         xhr.timeout = 300000;
@@ -141,14 +146,14 @@ async function logEvent(eventData, event) {
  */
 async function logEvent2(eventData, event) {
     ReadAddinSettings();
-    LogToConsole(eventData + " received");
+    console.log(FormatLog(eventData + " received"));
     if (fullLogEventAPIUrl != "") {
-        LogToConsole("POST " + fullLogEventAPIUrl);
+        console.log(FormatLog("POST " + fullLogEventAPIUrl));
         eventData = AddinName + ": " + eventData;
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function () {
             if (this.readyState == 4) {
-                if (event != null && (this.status == 200 || (addinSettings.get("blockOnAPIFail") != true)) ) {
+                if (event != null && (this.status == 200 || (addinSettings.get("blockOnAPIFail") != true && addinSettings.get("blockOnAPIFail") != "true")) ) {
                     event.completed({ allowEvent: true });
                 }
                 else if (event != null) {
