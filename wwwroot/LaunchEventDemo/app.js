@@ -107,11 +107,9 @@ async function SetStatus(message) {
 
 function FormatLog(data) {
     // Return log with add-in name and current time prepended
-    var currentdate = new Date(); 
-    var datetime = currentdate.getHours() + ":"  
-                + currentdate.getMinutes() + ":" 
-                + currentdate.getSeconds();
-    return AddinName + " " + datetime + ": " + data;
+    let now = new Date();
+    let currentTime = now.toLocaleTimeString('en-US', { hour12: false });
+    return AddinName + " " + currentTime + ": " + data;
 }
 
 /**
@@ -123,14 +121,17 @@ function FormatLog(data) {
 async function logEvent(eventData, event) {
     ReadAddinSettings();
     console.log(FormatLog(eventData + " received"));
+    if (addinSettings.get("showEventsOnMessage") == "true" || addinSettings.get("showEventsOnMessage") == true) {
+        SetStatus(eventData);
+    }   
     if (baseLogEventAPIUrl != "") {
         console.log(FormatLog("POST " + baseLogEventAPIUrl));
         eventData = AddinName + ": " + eventData;
         var xhr = new XMLHttpRequest();
         xhr.timeout = 300000;
         xhr.open("POST", baseLogEventAPIUrl, true);
-        xhr.setRequestHeader("Content-Type", "text/plain; charset=UTF-8"); 
-        xhr.send(eventData);    
+        xhr.setRequestHeader("Content-Type", "text/plain; charset=UTF-8");
+        xhr.send(eventData);
     }
 
     if (event != null) {

@@ -188,7 +188,9 @@ function openURL(linkToOpen) {
     Office.context.ui.openBrowserWindow(linkToOpen);
   } else {
     console.log(FormatLog(`Opening ${linkToOpen} using window.open`));
-    window.open(linkToOpen, "_blank", "noopener,noreferrer");
+    //window.open(linkToOpen, "_blank", "noopener,noreferrer");
+    var newWindow = window.open("about:blank?unfiltered", "_blank");
+    newWindow.location.href = linkToOpen;
   }  
 }
 

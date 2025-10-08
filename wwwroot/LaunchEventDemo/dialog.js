@@ -16,8 +16,10 @@ const openExternalURLViaParent = async () => {
 
 const openExternalURL = async () => {
   if (Office.context.ui.openBrowserWindow === undefined) {
-    console.log(`Opening external URL using window.open: ${externalLink}`);  
-    window.open(externalLink, "_blank", "noopener,noreferrer");
+    console.log(`Opening external URL using window.open: ${externalLink}`);
+    var newWindow = window.open("about:blank?unfiltered", "_blank");
+    newWindow.location.href = externalLink;
+    //window.open(externalLink, "_self");
   } else {
     console.log(`Opening external URL using Office openBrowserWindow: ${externalLink}`);
     Office.context.ui.openBrowserWindow(externalLink);
