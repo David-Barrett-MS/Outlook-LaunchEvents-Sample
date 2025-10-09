@@ -138,17 +138,12 @@ function showAddinSetting(settingName) {
   console.log(FormatLog(settingName + " read from add-in: " + addinSettingValue));
 
   if ((addinSettingValue == "true" || addinSettingValue == true) && !checkbox.checked) {
-    //console.log(FormatLog("Ticking " + checkboxName));
     checkbox.checked = true;
     checkboxLabel.classList.add("is-checked");
   }
   else if ((addinSettingValue == "false" || addinSettingValue == false) && checkbox.checked) {
-    //console.log(FormatLog("Unticking " + checkboxName));
     checkbox.checked = false;
     checkbox.classList.remove("is-checked");
-  }
-  else {
-    //console.log(FormatLog(checkboxName + " is displaying correct value"));
   }
 }
 
@@ -208,19 +203,6 @@ function processMessage(arg) {
     openURL(arg);
   } else {
     console.log(FormatLog(`Unhandled message: ${arg}`));
-  }
-}
-
-function openURLInBrowser() {
-  // New function to open the external link based on the platform
-  const externalLink = "https://microsoft.com";
-  // Check if openBrowserWindow is available (indicating we're in OWA or New Outlook)
-  if (Office.context.ui && Office.context.ui.openBrowserWindow) {
-    Office.context.ui.openBrowserWindow(externalLink);
-    console.log(FormatLog(`Opening ${externalLink} in OWA`));
-  } else {
-    window.open(externalLink, "_blank", "noopener,noreferrer");
-    console.log(FormatLog(`Opening ${externalLink} in Outlook classic`));
   }
 }
 
@@ -366,7 +348,7 @@ function updateTaskPaneUI(item) {
       Office.context.mailbox.item.requiredAttendees.getAsync(function(asyncResult) {
         if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
           const apptAttendees = asyncResult.value;
-          console.log(FormatLog("Item recipients (compose mode):"));
+          console.log(FormatLog("Appointment attendees (compose mode):"));
           for (let i = 0; i < apptAttendees.length; i++) {
             console.log(FormatLog(apptAttendees[i].displayName + " (" + apptAttendees[i].emailAddress + ")"));
           }

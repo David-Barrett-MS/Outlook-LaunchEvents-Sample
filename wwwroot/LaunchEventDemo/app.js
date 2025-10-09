@@ -43,41 +43,8 @@ function ReadAddinSettings() {
     }
 }
 
-async function getInsightMessage() {
-  return {
-    type: Office.MailboxEnums.ItemNotificationMessageType.InsightMessage,
-    message: "This is an InsightMessage",
-    icon: "Icon.16x16",
-    actions: [
-      {
-        actionText: "Open TaskPane",
-        actionType: Office.MailboxEnums.ActionType.ShowTaskPane,
-        commandId: "msgComposeOpenPaneButton",
-        contextData: "{}"
-      }
-    ]
-  };
-}
-
-async function applyInsightMessage(event) {
-  const notification = await getInsightMessage();
-
-  console.log(FormatLog("Applying InsightMessage:", notification));
-  Office.context.mailbox.item.notificationMessages.replaceAsync("InsightMessage", notification, (asyncResult) => {
-    if (asyncResult.status === Office.AsyncResultStatus.Failed) {
-      console.error("Failed to apply InsightMessage:", asyncResult.error.message);
-      return;
-    }
-    console.log(FormatLog("InsightMessage applied"));
-  });  
-
-  if (event) {
-    event.completed();
-  }
-}
-
 /**
- * Set notification on MailItem (overwrites any previous notification)
+ * Set notification on current item (overwrites any previous notification)
  * @param {Notification message to be set} message 
  */
 async function SetNotification(message) {
@@ -92,7 +59,7 @@ async function SetNotification(message) {
 }
 
 /**
- * Append the given status to the notification for the MailItem
+ * Append the given status to the notification for the current item
  * @param {Message to be added to the status} message 
  * @returns 
  */
@@ -124,7 +91,7 @@ async function logEvent(eventData, event) {
     if (addinSettings.get("showEventsOnMessage") == "true" || addinSettings.get("showEventsOnMessage") == true) {
         SetStatus(eventData);
     }
-    // sendClientInfo
+
     if (baseLogEventAPIUrl != "") {
         console.log(FormatLog("POST " + baseLogEventAPIUrl));
         
@@ -156,7 +123,11 @@ async function logEvent2(eventData, event) {
     console.log(FormatLog(eventData + " received"));
     if (fullLogEventAPIUrl != "") {
         console.log(FormatLog("POST " + fullLogEventAPIUrl));
-        eventData = AddinName + ": " + eventData;
+        if (addinSettings.get("sendClientInfo") == "true" || addinSettings.get("sendClientInfo") == true) {
+            eventData = Office.context.mailbox.userProfile.displayName + ": " + eventData;
+        } else {
+            eventData = AddinName + ": " + eventData;
+        }
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function () {
             if (this.readyState == 4) {
