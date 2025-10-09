@@ -24,10 +24,8 @@ let logEventAPI = "";
  */
 let apiDelayInSeconds = 0;
 
-/**
- * Whether or not to block send if calling the API fails (e.g. server not available)
- */
-let blockOnAPIFail = false;
+var addInOptions=["blockOnAPIFail", "obtainAppointmentId", "showEventsOnMessage", "sendClientInfo"];
+
 
 function FormatLog(data) {
     // Return log with add-in name and current time prepended
@@ -66,9 +64,12 @@ Office.initialize = function () {
       settingsUpdated = true;
   }
 
-  settingsUpdated = settingsUpdated | InitialiseAddinOption("blockOnAPIFail");
-  settingsUpdated = settingsUpdated | InitialiseAddinOption("obtainAppointmentId");
-  settingsUpdated = settingsUpdated | InitialiseAddinOption("showEventsOnMessage");
+  addInOptions.forEach(function(addinOption) {
+    settingsUpdated = settingsUpdated | InitialiseAddinOption(addinOption);
+    showAddinSetting(addinOption);
+    var settingCheckbox = document.getElementById(addinOption + "Checkbox");
+    settingCheckbox.addEventListener("change", checkboxChanged);
+  });
 
   if (settingsUpdated) {
     addinSettings.saveAsync(null);
@@ -76,19 +77,6 @@ Office.initialize = function () {
   } else {
     console.log(FormatLog("Settings read"));
   }
-
-
-  showAddinSetting("blockOnAPIFail");
-  var blockOnAPIFailCheckbox = document.getElementById("blockOnAPIFailCheckbox");
-  blockOnAPIFailCheckbox.addEventListener("change", checkboxChanged);
-
-  showAddinSetting("obtainAppointmentId");
-  var obtainAppointmentIdCheckbox = document.getElementById("obtainAppointmentIdCheckbox");
-  obtainAppointmentIdCheckbox.addEventListener("change", checkboxChanged);
-
-  showAddinSetting("showEventsOnMessage");
-  var showEventsOnMessageCheckbox = document.getElementById("showEventsOnMessageCheckbox");
-  showEventsOnMessageCheckbox.addEventListener("change", checkboxChanged); 
 
   document.getElementById("apiUrlInput").value = apiUrl;
 
@@ -175,9 +163,9 @@ export function checkboxChanged() {
   // Called when any checkbox is changed from the UI (we read all checkbox values and set them)
   console.log(FormatLog("checkboxChanged called - reading add-in settings from UI"));
 
-  applyCheckboxSetting("blockOnAPIFail");
-  applyCheckboxSetting("obtainAppointmentId");
-  applyCheckboxSetting("showEventsOnMessage");
+  addInOptions.forEach(function(addInOption) {
+    applyCheckboxSetting(addInOption);
+  });
 
   addinSettings.saveAsync(null);
 }
@@ -285,7 +273,7 @@ async function getInsightMessage() {
     icon: "Icon.16x16",
     actions: [
       {
-        actionText: "Process manually",
+        actionText: "Open TaskPane",
         actionType: Office.MailboxEnums.ActionType.ShowTaskPane,
         commandId: "msgComposeOpenPaneButton",
         contextData: "{}"
@@ -295,9 +283,13 @@ async function getInsightMessage() {
 }
 
 const applyInsightMessage = async () => {
-  const notification = await getInsightMessage();
+  var notification = await getInsightMessage();
+  if (Office.context.mailbox.item.itemType == Office.MailboxEnums.ItemType.Appointment) {
+    notification.actions[0].commandId = "apptComposeOpenPaneButton";
+  }
 
-  console.log(FormatLog("Applying InsightMessage (from TaskPane button):", notification));
+  console.log(FormatLog("Applying InsightMessage (from TaskPane button):"));
+  console.log(notification);
   Office.context.mailbox.item.notificationMessages.replaceAsync("InsightMessage", notification, (asyncResult) => {
     if (asyncResult.status === Office.AsyncResultStatus.Failed) {
       console.error("Failed to apply InsightMessage:", asyncResult.error.message);
@@ -348,23 +340,40 @@ function updateTaskPaneUI(item) {
   
   // We are in compose mode
   item.subject.getAsync((asyncResult) => {
-        if (asyncResult.status === Office.AsyncResultStatus.Failed) {
-            write(asyncResult.error.message);
-            return;
-        }
-        console.log(FormatLog("Item subject (compose mode): " + asyncResult.value));
-        showSubject(asyncResult.value);
+    if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+        write(asyncResult.error.message);
+        return;
+    }
+    console.log(FormatLog("Item subject (compose mode): " + asyncResult.value));
+    showSubject(asyncResult.value);
 
-        Office.context.mailbox.item.to.getAsync(function(asyncResult) {
-          if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
-            const msgTo = asyncResult.value;
-            console.log(FormatLog("Item recipients (compose mode):"));
-            for (let i = 0; i < msgTo.length; i++) {
-              console.log(FormatLog(msgTo[i].displayName + " (" + msgTo[i].emailAddress + ")"));
-            }
-          } else {
-            console.error(asyncResult.error);
+    if (item.itemType == Office.MailboxEnums.ItemType.Message)
+    {
+      Office.context.mailbox.item.to.getAsync(function(asyncResult) {
+        if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+          const msgTo = asyncResult.value;
+          console.log(FormatLog("Item recipients (compose mode):"));
+          for (let i = 0; i < msgTo.length; i++) {
+            console.log(FormatLog(msgTo[i].displayName + " (" + msgTo[i].emailAddress + ")"));
           }
-        });        
-      });    
+        } else {
+          console.error(asyncResult.error);
+        }
+      });
+    }
+    else if (item.itemType == Office.MailboxEnums.ItemType.Appointment)
+    {
+      Office.context.mailbox.item.requiredAttendees.getAsync(function(asyncResult) {
+        if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+          const apptAttendees = asyncResult.value;
+          console.log(FormatLog("Item recipients (compose mode):"));
+          for (let i = 0; i < apptAttendees.length; i++) {
+            console.log(FormatLog(apptAttendees[i].displayName + " (" + apptAttendees[i].emailAddress + ")"));
+          }
+        } else {
+          console.error(asyncResult.error);
+        }
+      });            
+    }
+  });  
 }

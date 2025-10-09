@@ -101,7 +101,7 @@ async function SetStatus(message) {
         statusInfo = statusInfo + " | ";    
     }
     statusInfo = statusInfo + message;
-    console.log(FormatLog(message));
+    console.log(FormatLog("Adding to notification: " + message));
     return SetNotification(statusInfo);
 }
 
@@ -123,10 +123,16 @@ async function logEvent(eventData, event) {
     console.log(FormatLog(eventData + " received"));
     if (addinSettings.get("showEventsOnMessage") == "true" || addinSettings.get("showEventsOnMessage") == true) {
         SetStatus(eventData);
-    }   
+    }
+    // sendClientInfo
     if (baseLogEventAPIUrl != "") {
         console.log(FormatLog("POST " + baseLogEventAPIUrl));
-        eventData = AddinName + ": " + eventData;
+        
+        if (addinSettings.get("sendClientInfo") == "true" || addinSettings.get("sendClientInfo") == true) {
+            eventData = Office.context.mailbox.userProfile.displayName + ": " + eventData;
+        } else {
+            eventData = AddinName + ": " + eventData;
+        }
         var xhr = new XMLHttpRequest();
         xhr.timeout = 300000;
         xhr.open("POST", baseLogEventAPIUrl, true);
@@ -272,7 +278,7 @@ function OnMessageReadWithCustomHeaderHandler(event) {
 }
 
 
-if (Office.context.platform === Office.PlatformType.PC || Office.context.platform == null) {
+if (Office.context !== undefined && (Office.context.platform === Office.PlatformType.PC || Office.context.platform == null) ) {
     // Associate the events with their respective handlers
     Office.actions.associate("OnMessageSendHandler", onMessageSendHandler);
     Office.actions.associate("OnNewMessageComposeHandler", OnNewMessageComposeHandler);

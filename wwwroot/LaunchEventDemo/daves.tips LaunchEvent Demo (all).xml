@@ -4,11 +4,13 @@
   xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
   xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="MailApp">
   <Id>e7670756-ba14-4ac0-a6a7-a0f508a80d5b</Id>
-  <Version>1.0.0.5</Version>
+  <Version>1.0.0.6</Version>
   <ProviderName>daves.tips</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="daves.tips LaunchEventDemo"/>
   <Description DefaultValue="POSTs all received events to a REST API that logs the data."/>
+  <IconUrl DefaultValue="https://apps1.daves.tips/LaunchEventDemo/assets/icon-64.png" />
+  <HighResolutionIconUrl DefaultValue="https://apps1.daves.tips/LaunchEventDemo/assets/icon-300.png" />  
   <SupportUrl DefaultValue="https://apps1.daves.tips"/>
   <AppDomains>
     <AppDomain>https://apps1.daves.tips</AppDomain>
