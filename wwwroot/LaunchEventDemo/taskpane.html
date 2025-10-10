@@ -26,13 +26,13 @@
         <h1 class="ms-font-su"><img width="90" height="90" src="assets/icon-300.png" alt="LaunchEventsDemo Logo" title="LaunchEventsDemo Logo" style="vertical-align: middle;"/>LaunchEventDemo</h1>
     </header>
     <section class="ms-font-m">
-        <h3>Message Details</h3>
+        <h3>Message Information</h3>
         <div class="ms-TextField">
-            <label class="ms-Label">Message Subject</label>
+            <label class="ms-Label">Subject</label>
             <input id="messageSubjectInput" class="ms-TextField-field" type="text" value="" placeholder="">
     </section>
     <section class="ms-font-m">
-        <h3>API Settings</h3>
+        <h3>Add-in Configuration</h3>
         <div class="ms-TextField">
             <label class="ms-Label">API Delay</label>
             <input id="apiDelayInput" class="ms-TextField-field" type="number" value="" placeholder="0">
@@ -67,12 +67,12 @@
     </section>
     <section class="ms-font-m">
         <h3>Tests</h3>
-        <!-- New Button to Open External Link -->
+        <!-- Button to Open External Link -->
         <div role="button" id="openLink" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
             <span class="ms-Button-label">Open External Link</span>
         </div>
         <br/>
-        <!-- New Button to Open Office JS Dialog -->
+        <!-- Button to Open Office JS Dialog -->
         <div role="button" id="openDialog" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
             <span class="ms-Button-label">Open Office Dialog</span>
         </div>
@@ -80,6 +80,11 @@
         <!-- Apply InsightMessage to current item -->
         <div role="button" id="applyInsightMessage" class="ms-Button ms-Button--hero ms-font-xl">
             <span class="ms-Button-label">Apply InsightMessage</span>
+        </div>        
+        <br/>
+        <!-- Get Message Details -->
+        <div role="button" id="getMessageDetails" class="ms-Button ms-Button--hero ms-font-xl">
+            <span class="ms-Button-label">Get Message Details</span>
         </div>        
     </section>
     <script type="text/javascript">
