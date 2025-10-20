@@ -18,6 +18,7 @@
     </script>    
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.min.css" />
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.components.min.css" />
+    <link rel="stylesheet" href="taskpane.css" />
     <script src="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/js/fabric.min.js"></script>
  
 </head>
@@ -30,6 +31,33 @@
         <div class="ms-TextField">
             <label class="ms-Label">Subject</label>
             <input id="messageSubjectInput" class="ms-TextField-field" type="text" value="" placeholder="">
+    </section>
+    <section class="ms-font-m">
+        <h3>Tests</h3>
+        <!-- Button to Open External Link -->
+        <div role="button" id="openLink" class="ms-Button ms-Button--hero ms-font-xl" style="display:block" >
+            <span class="ms-Button-label">Open External Link</span>
+        </div>
+        <!-- Button to Open Office JS Dialog -->
+        <div role="button" id="openDialog" class="ms-Button ms-Button--hero ms-font-xl" style="display:block">
+            <span class="ms-Button-label">Open Office Dialog</span>
+        </div>
+        <!-- Apply InsightMessage to current item -->
+        <div role="button" id="applyInsightMessage" class="ms-Button ms-Button--hero ms-font-xl" style="display:block">
+            <span class="ms-Button-label">Apply InsightMessage</span>
+        </div>        
+        <!-- Get Message Details -->
+        <div role="button" id="getMessageDetails" class="ms-Button ms-Button--hero ms-font-xl" style="display:block">
+            <span class="ms-Button-label">Get Message Details</span>
+        </div>  
+        <!-- Send message (only works in compose mode) -->
+        <div role="button" id="sendMessage" class="ms-Button ms-Button--hero ms-font-xl" style="display:block">
+            <span class="ms-Button-label">Send Message</span>
+        </div>  
+        <!-- Create new appointment -->
+        <div role="button" id="createNewAppointment" class="ms-Button ms-Button--hero ms-font-xl" style="display:block">
+            <span class="ms-Button-label">Create New Appointment</span>
+        </div>
     </section>
     <section class="ms-font-m">
         <h3>Add-in Configuration</h3>
@@ -66,26 +94,8 @@
         </div>
     </section>
     <section class="ms-font-m">
-        <h3>Tests</h3>
-        <!-- Button to Open External Link -->
-        <div role="button" id="openLink" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
-            <span class="ms-Button-label">Open External Link</span>
-        </div>
-        <br/>
-        <!-- Button to Open Office JS Dialog -->
-        <div role="button" id="openDialog" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
-            <span class="ms-Button-label">Open Office Dialog</span>
-        </div>
-        <br/>
-        <!-- Apply InsightMessage to current item -->
-        <div role="button" id="applyInsightMessage" class="ms-Button ms-Button--hero ms-font-xl">
-            <span class="ms-Button-label">Apply InsightMessage</span>
-        </div>        
-        <br/>
-        <!-- Get Message Details -->
-        <div role="button" id="getMessageDetails" class="ms-Button ms-Button--hero ms-font-xl">
-            <span class="ms-Button-label">Get Message Details</span>
-        </div>        
+        <h3>Debug console</h3>
+        <div id="debugConsole"></div>
     </section>
     <script type="text/javascript">
         //import { checkboxChanged } from './taskpane.js';

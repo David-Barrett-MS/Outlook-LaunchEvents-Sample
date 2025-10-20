@@ -33,21 +33,24 @@ function FormatLog(data) {
   return AddinName + " " + currentTime + ": " + data;
 }
 
-function ShowConsoleInTaskPane() {
+function ShowConsoleInTaskPane(container) {
   // Add console output at the bottom of the TaskPane
 
-  // Containing div
-  const consoleDiv = document.createElement('div');
-  consoleDiv.style.border = '1px solid #000';
-  consoleDiv.style.marginTop = '20px';
+  if (container==null) {
+    // Create the container if not supplied
+    container = document.createElement('div');
+    container.style.border = '1px solid #000';
+    container.style.marginTop = '20px';
+    document.body.appendChild(container);
+  }
 
   // code element
   const outputDiv = document.createElement('code');
   outputDiv.style.whiteSpace = 'pre-wrap'; // Preserve formatting
   outputDiv.style.fontSize = '11px';
   outputDiv.style.wordBreak = 'break-word';
-  consoleDiv.appendChild(outputDiv);
-  document.body.appendChild(consoleDiv);
+  container.appendChild(outputDiv);
+  //document.body.appendChild(consoleDiv);
 
   // Save the original console.log function
   const originalConsoleLog = console.log;
@@ -60,7 +63,7 @@ function ShowConsoleInTaskPane() {
     originalConsoleLog(FormatLog(message));
   };
 }
-ShowConsoleInTaskPane();
+ShowConsoleInTaskPane(document.getElementById("debugConsole"));
 
 /**
  * The Office.initialize function that gets called when the Office.js library is loaded.
@@ -114,6 +117,8 @@ Office.initialize = function () {
   document.getElementById("openDialog").onclick = openOfficeDialog;
   document.getElementById("applyInsightMessage").onclick = applyInsightMessage;
   document.getElementById("getMessageDetails").onclick = getMessageDetails;
+  document.getElementById("sendMessage").onclick = sendMessage;
+  document.getElementById("createNewAppointment").onclick = createNewAppointment;
 
   // Set up the ItemChanged event.
   if (Office.context.mailbox.item == null) {
@@ -122,6 +127,7 @@ Office.initialize = function () {
   Office.context.mailbox.addHandlerAsync(Office.EventType.ItemChanged, itemChanged);
   console.log("ItemChanged event handler added");
   updateTaskPaneUI(Office.context.mailbox.item);
+  UpdateTestAvailability();
 }
 
 /**
@@ -313,6 +319,7 @@ function itemChanged(eventArgs) {
   // Update UI based on the new current item.
   console.log("ItemChanged event fired");
   updateTaskPaneUI(Office.context.mailbox.item);
+  UpdateTestAvailability();
 }
 
 /**
@@ -321,6 +328,35 @@ function itemChanged(eventArgs) {
 function showSubject(subject) {
     var messageSubject = document.getElementById("messageSubjectInput");
     messageSubject.value = subject;
+}
+
+function inComposeMode()
+{
+  if (Office.context.mailbox.item == null) {
+    return false;
+  }
+  if (typeof Office.context.mailbox.item.subject === "string") {
+    return false;
+  }
+  return true;
+}
+
+function UpdateTestAvailability()
+{
+  // Enable or disable test availablity
+  if (inComposeMode()) {
+    console.log("Updating available tests for Compose mode");
+    document.getElementById("createNewAppointment").style.display = "none";
+    document.getElementById("sendMessage").style.display = "block";
+    document.getElementById("applyInsightMessage").style.display = "block";
+  }
+  else
+  {
+    console.log("Updating available tests for Read mode");
+    document.getElementById("createNewAppointment").style.display = "block";
+    document.getElementById("sendMessage").style.display = "none";
+    document.getElementById("applyInsightMessage").style.display = "none";
+  }
 }
 
 // This function updates the task pane UI based on the current item.
@@ -400,4 +436,34 @@ function getMessageDetails() {
 
     console.log(bodyResult.value);
   });  
+}
+
+function sendMessage() {
+  // Send the current message or appointment
+  console.log("Send message selected from TaskPane");
+  Office.context.mailbox.item.sendAsync((result) => {
+    if (result.status === Office.AsyncResultStatus.Succeeded) {
+      console.log("Message sent successfully");
+    } else {
+      console.log("Failed to send message:", result.error);
+    }
+  });
+}
+
+function createNewAppointment() {
+  console.log("Creating new appointment");
+  const start = new Date();
+  const end = new Date();
+  end.setHours(start.getHours() + 1);
+
+  Office.context.mailbox.displayNewAppointmentForm({
+    requiredAttendees: [],
+    optionalAttendees: [],
+    start: start,
+    end: end,
+    location: "Nowhere",
+    subject: "Meeting created from add-in",
+    resources: [],
+    body: "Hello World!"
+  });
 }

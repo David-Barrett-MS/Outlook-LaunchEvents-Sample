@@ -5,6 +5,7 @@ Office.onReady(() => {
   document.getElementById("app-body").style.display = "flex";
   document.getElementById("openLinkViaParent").onclick = openExternalURLViaParent; // Add the click event for the new button
   document.getElementById("openLinkDirect").onclick = openExternalURL; // Add the click event for the new button
+  document.getElementById("externalUrlInput").value = externalLink;
 });
 
 const openExternalURLViaParent = async () => {
@@ -15,13 +16,14 @@ const openExternalURLViaParent = async () => {
 };
 
 const openExternalURL = async () => {
+  var linkToOpen = document.getElementById("externalUrlInput").value;
   if (Office.context.ui.openBrowserWindow === undefined) {
-    console.log(`Opening external URL using window.open: ${externalLink}`);
+    console.log(`Opening external URL using window.open: ${linkToOpen}`);
     var newWindow = window.open("about:blank?unfiltered", "_blank");
-    newWindow.location.href = externalLink;
+    newWindow.location.href = linkToOpen;
     //window.open(externalLink, "_self");
   } else {
-    console.log(`Opening external URL using Office openBrowserWindow: ${externalLink}`);
-    Office.context.ui.openBrowserWindow(externalLink);
+    console.log(`Opening external URL using Office openBrowserWindow: ${linkToOpen}`);
+    Office.context.ui.openBrowserWindow(linkToOpen);
   }
 };

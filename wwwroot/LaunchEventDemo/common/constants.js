@@ -2,7 +2,7 @@
  * The external link to open when button clicked
  * @type {string}
  */
-export const externalLink = "https://apps1.daves.tips/terms.html";
+export const externalLink = "https://apps1.daves.tips/LaunchEventDemo/external.html";
 
 /**
  * The name of the add-in.

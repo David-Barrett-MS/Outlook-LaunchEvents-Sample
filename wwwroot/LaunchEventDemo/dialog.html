@@ -12,22 +12,27 @@
     <!-- Office JavaScript API -->
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.debug.js"></script>
 
-    <!-- For more information on Fluent UI, visit https://developer.microsoft.com/fluentui#/. -->
-    <link rel="stylesheet" href="https://res-1.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.1.0/css/fabric.min.css" />
-
     <!-- Template styles -->
     <link href="dialog.css" rel="stylesheet" type="text/css" />
 
     <script type="module" src="dialog.js"></script>
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.min.css" />
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.components.min.css" />
+    <script src="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/js/fabric.min.js"></script>    
 </head>
 
 <body class="ms-font-m ms-welcome ms-Fabric">
     <section id="sideload-msg" class="ms-welcome__main">
         <h2 class="ms-font-xl">Please <a target="_blank" href="https://learn.microsoft.com/office/dev/add-ins/testing/test-debug-office-add-ins#sideload-an-office-add-in-for-testing">sideload</a> your add-in to see app body.</h2>
     </section>
-    <main id="app-body" class="ms-welcome__main" style="display: none;">
+    <main id="app-body" class="ms-welcome__main" style="display: none; background-color: white; height: 100%;">
         <h2 class="ms-font-xl"><img width="90" height="90" src="assets/logo-filled.png" alt="LaunchEventsDemo Logo" title="LaunchEventsDemo Logo" style="vertical-align: middle;"/></h2>
         <h2 class="ms-font-xl"> LaunchEventsDemo Dialog </h2>
+
+        <div class="ms-TextField">
+            <label class="ms-Label">External URL to be opened:</label>
+            <input id="externalUrlInput" class="ms-TextField-field" type="url" value="" placeholder="" style="width: 600px;">
+        </div>
 
         <!-- Open External Link via message parent to TaskPane-->
         <div role="button" id="openLinkViaParent" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
@@ -36,9 +41,20 @@
         <!-- Open External Link directly from DialogAPI -->
         <div role="button" id="openLinkDirect" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
             <span class="ms-Button-label">Open External Link using window.open directly</span>
-        </div>
-    
+        </div>    
     </main>
+    <script type="text/javascript">
+        //import { checkboxChanged } from './taskpane.js';
+        var TextFieldElements = document.querySelectorAll(".ms-TextField");
+        for (var i = 0; i < TextFieldElements.length; i++) {
+            new fabric['TextField'](TextFieldElements[i]);
+        }
+        var CheckBoxElements = document.querySelectorAll(".ms-CheckBox");
+        for (var i = 0; i < CheckBoxElements.length; i++) {
+            new fabric['CheckBox'](CheckBoxElements[i], module.checkboxChangedHandler);
+        }        
+        console.log("Fabric applied");
+    </script>         
 </body>
 
 </html>
