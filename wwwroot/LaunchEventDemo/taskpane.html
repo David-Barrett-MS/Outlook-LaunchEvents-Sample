@@ -34,6 +34,10 @@
     </section>
     <section class="ms-font-m">
         <h3>Tests</h3>
+        <!-- Button to Set Extended Properties -->
+        <div role="button" id="setProps" class="ms-Button ms-Button--hero ms-font-xl" style="display:block" >
+            <span class="ms-Button-label">Set Extended Properties</span>
+        </div>
         <!-- Button to Open External Link -->
         <div role="button" id="openLink" class="ms-Button ms-Button--hero ms-font-xl" style="display:block" >
             <span class="ms-Button-label">Open External Link</span>
@@ -60,37 +64,63 @@
         </div>
     </section>
     <section class="ms-font-m">
+        <h3>Drag/drop tests</h3>
+            <div id="dragDropTests">
+            <!-- Drop section 1 -->
+            <div id="drop-target" class="drop-target" style="width: 100px;height: 50px;background-color: lightgreen; display: inline-block;">
+                <p class="ms-font-l">Target 1</p>
+            </div>
+
+            <!-- Drop section 2 -->
+            <div id="drop-target-2" class="drop-target" style="width: 100px;height: 50px;margin-top: 10px;background-color: lightsalmon; display: inline-block;">
+                <p class="ms-font-l">Target 2</p>
+            </div>
+        </div>
+    </section>
+    <section class="ms-font-m">
         <h3>Add-in Configuration</h3>
-        <div class="ms-TextField">
-            <label class="ms-Label">API Delay</label>
-            <input id="apiDelayInput" class="ms-TextField-field" type="number" value="" placeholder="0">
-        </div>
-        <div class="ms-TextField">
-            <label class="ms-Label">API Endpoint</label>
-            <input id="apiUrlInput" class="ms-TextField-field" type="url" value="" placeholder="">
-        </div>
-        <div class="ms-CheckBox">
-            <input id="sendClientInfoCheckbox" type="checkbox" class="ms-CheckBox-input">
-            <label role="checkbox" class="ms-CheckBox-field" id="sendClientInfoCheckboxLabel">
-                <span class="ms-Label">Send user details with event to API (prepends user's display name to the event name).</span>
-            </label>
-        </div>        <div class="ms-CheckBox">
-            <input id="blockOnAPIFailCheckbox" type="checkbox" class="ms-CheckBox-input">
-            <label role="checkbox" class="ms-CheckBox-field" id="blockOnAPIFailCheckboxLabel">
-                <span class="ms-Label">Block send if API call fails</span>
-            </label>
-        </div>
-        <div class="ms-CheckBox">
-            <input id="obtainAppointmentIdCheckbox" type="checkbox" class="ms-CheckBox-input">
-            <label role="checkbox" class="ms-CheckBox-field" id="obtainAppointmentIdCheckboxLabel">
-                <span class="ms-Label">Log appointment Id of the item (if new item, force save to obtain one)</span>
-            </label>
-        </div>
-        <div class="ms-CheckBox">
-            <input id="showEventsOnMessageCheckbox" type="checkbox" class="ms-CheckBox-input">
-            <label role="checkbox" class="ms-CheckBox-field" id="showEventsOnMessageCheckboxLabel">
-                <span class="ms-Label">Add events to the notification bar of the displayed message.</span>
-            </label>
+        <div id="addInConfiguration">
+            <div class="ms-TextField">
+                <label class="ms-Label">API Delay</label>
+                <input id="apiDelayInput" class="ms-TextField-field" type="number" value="" placeholder="0">
+            </div>
+            <div class="ms-TextField">
+                <label class="ms-Label">API Endpoint</label>
+                <input id="apiUrlInput" class="ms-TextField-field" type="url" value="" placeholder="">
+            </div>
+            <div class="ms-TextField">
+                <label class="ms-Label">Test Recipient</label>
+                <input id="testRecipient" class="ms-TextField-field" type="text" value="" placeholder="">
+            </div>
+            <div class="ms-CheckBox">
+                <input id="sendClientInfoCheckbox" type="checkbox" class="ms-CheckBox-input">
+                <label role="checkbox" class="ms-CheckBox-field" id="sendClientInfoCheckboxLabel">
+                    <span class="ms-Label">Send user details with event to API (prepends user's display name to the event name).</span>
+                </label>
+            </div>        <div class="ms-CheckBox">
+                <input id="blockOnAPIFailCheckbox" type="checkbox" class="ms-CheckBox-input">
+                <label role="checkbox" class="ms-CheckBox-field" id="blockOnAPIFailCheckboxLabel">
+                    <span class="ms-Label">Block send if API call fails</span>
+                </label>
+            </div>
+            <div class="ms-CheckBox">
+                <input id="obtainAppointmentIdCheckbox" type="checkbox" class="ms-CheckBox-input">
+                <label role="checkbox" class="ms-CheckBox-field" id="obtainAppointmentIdCheckboxLabel">
+                    <span class="ms-Label">Log appointment Id of the item (if new item, force save to obtain one)</span>
+                </label>
+            </div>
+            <div class="ms-CheckBox">
+                <input id="showEventsOnMessageCheckbox" type="checkbox" class="ms-CheckBox-input">
+                <label role="checkbox" class="ms-CheckBox-field" id="showEventsOnMessageCheckboxLabel">
+                    <span class="ms-Label">Add events to the notification bar of the displayed message.</span>
+                </label>
+            </div>
+            <div class="ms-CheckBox">
+                <input id="showCustomSmartAlertDialogCheckbox" type="checkbox" class="ms-CheckBox-input">
+                <label role="checkbox" class="ms-CheckBox-field" id="showCustomSmartAlertDialogCheckboxLabel">
+                    <span class="ms-Label">Show custom smart alert dialog (for message and meeting send)</span>
+                </label>
+            </div>
         </div>
     </section>
     <section class="ms-font-m">

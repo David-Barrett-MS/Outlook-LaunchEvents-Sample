@@ -7,6 +7,7 @@ var statusInfo = "";
 var fullLogEventAPIUrl = ""; // The API URL including any additional parameters
 var baseLogEventAPIUrl = ""; // The API URL
 var addinSettings;
+var showSmartAlert = false;
 const AddinName = "LaunchEventDemo";
 
 //Office.onReady();
@@ -40,6 +41,10 @@ function ReadAddinSettings() {
             console.log(FormatLog("API URL adjusted: " + fullLogEventAPIUrl));
         }
         console.log(FormatLog("Finished reading add-in settings"));
+    }
+
+    if (addinSettings.get("showCustomSmartAlertDialog") == "true" || addinSettings.get("showCustomSmartAlertDialog") == true) {
+        showSmartAlert = true;
     }
 }
 
@@ -154,7 +159,21 @@ async function logEvent2(eventData, event) {
 function onMessageSendHandler(event) {
     //applyInsightMessage(null);
     logEvent2("OnMessageSend", null).then(() => {
-        event.completed({ allowEvent: true });
+        if (showSmartAlert) {
+            event.completed({
+                allowEvent: false,
+                errorMessage: "You have not selected any filing options.  To Send & File this email you need to open the filing options panel and select a filing location before sending.",
+                // TIP: In addition to the formatted message, it's recommended to also set a
+                // plain text message in the errorMessage property for compatibility on
+                // older versions of Outlook clients.
+                errorMessageMarkdown: "You have not selected any filing options.  To Send & File this email you need to open the filing options panel and select a filing location before sending.",
+                cancelLabel: "Open Filing Options",
+                commandId: "msgComposeOpenPaneButton"
+            });            // Show the custom smart alert dialog
+        }
+        else {
+            event.completed({ allowEvent: true });
+        }
     })
 }
 

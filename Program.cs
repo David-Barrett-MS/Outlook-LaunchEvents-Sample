@@ -3,17 +3,16 @@ using WebAPISample;
 
 bool devMode = false;
 
-var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: MyAllowSpecificOrigins,
-                      policy =>
-                      {
-                          policy.WithOrigins("http://apps1.daves.tips");
-                      });
+    options.AddDefaultPolicy(policy =>
+        {
+            policy.WithOrigins("https://apps1.daves.tips", "https://outlook.office.com")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+        });
 });
 
 // Add services to the container.
@@ -27,15 +26,14 @@ if (devMode)
                 NoStore = true,
                 Location = ResponseCacheLocation.None
             }));
+
+    // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+
 }
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
 builder.Services.AddControllers(o => o.InputFormatters.Insert(o.InputFormatters.Count, new TextPlainInputFormatter()));
-
-builder.Logging.
 
 var app = builder.Build();
 
@@ -46,11 +44,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseStaticFiles();
-
 app.UseHttpsRedirection();
 
-app.UseCors(MyAllowSpecificOrigins);
+app.UseCors();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append(
+            "access-control-allow-origin", "https://outlook.office.com");
+    }
+});
 
 app.UseAuthorization();
 

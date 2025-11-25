@@ -24,7 +24,13 @@ let logEventAPI = "";
  */
 let apiDelayInSeconds = 0;
 
-var addInOptions=["blockOnAPIFail", "obtainAppointmentId", "showEventsOnMessage", "sendClientInfo"];
+/**
+ * Test recipient (used when sending emails or invites during tests)
+ * @type {string}
+ */
+let testRecipient = "";
+
+var addInOptions=["blockOnAPIFail", "obtainAppointmentId", "showEventsOnMessage", "sendClientInfo", "showCustomSmartAlertDialog"];
 
 
 function FormatLog(data) {
@@ -93,6 +99,14 @@ Office.initialize = function () {
       settingsUpdated = true;
   }
 
+  testRecipient = addinSettings.get("testRecipient");
+  if (testRecipient == null) {
+    addinSettings.set("testRecipient", "");
+    testRecipient = "";
+    settingsUpdated = true;
+  }
+
+  // Initialise checkboxes
   addInOptions.forEach(function(addinOption) {
     settingsUpdated = settingsUpdated | InitialiseAddinOption(addinOption);
     showAddinSetting(addinOption);
@@ -113,12 +127,17 @@ Office.initialize = function () {
   apiDelayInput.value = apiDelay;
   apiDelayInput.onchange = UpdateApiDelay;
 
+  var testRecipientInput = document.getElementById("testRecipient");
+  testRecipientInput.value = testRecipient;
+  testRecipientInput.onchange = UpdateTestRecipient;
+
   document.getElementById("openLink").onclick = openFolderLocationInWeb; // Add the click event for the new button
   document.getElementById("openDialog").onclick = openOfficeDialog;
   document.getElementById("applyInsightMessage").onclick = applyInsightMessage;
   document.getElementById("getMessageDetails").onclick = getMessageDetails;
   document.getElementById("sendMessage").onclick = sendMessage;
   document.getElementById("createNewAppointment").onclick = createNewAppointment;
+  document.getElementById("setProps").onclick = setExtendedProperties;
 
   // Set up the ItemChanged event.
   if (Office.context.mailbox.item == null) {
@@ -128,6 +147,9 @@ Office.initialize = function () {
   console.log("ItemChanged event handler added");
   updateTaskPaneUI(Office.context.mailbox.item);
   UpdateTestAvailability();
+
+  initializeHTMLDragDropHandlers();
+  initializeOfficeDragAndDropHandlers();
 }
 
 /**
@@ -139,6 +161,16 @@ function UpdateApiDelay() {
     if (apiDelay != apiDelayInSeconds) {
         apiDelayInSeconds = Number(apiDelay);
         addinSettings.set("apiDelay", apiDelayInSeconds);
+        addinSettings.saveAsync(null);
+    }
+}
+
+function UpdateTestRecipient() {
+    console.log("UpdateTestRecipient called");
+    var updatedTestRecipient = document.getElementById("testRecipient").value;
+    if (updatedTestRecipient != testRecipient) {
+        testRecipient = updatedTestRecipient;
+        addinSettings.set("testRecipient", testRecipient);
         addinSettings.saveAsync(null);
     }
 }
@@ -466,4 +498,258 @@ function createNewAppointment() {
     resources: [],
     body: "Hello World!"
   });
+}
+
+
+
+function initializeHTMLDragDropHandlers() {
+  // Set up drag/drop
+  const dropTarget1 = document.getElementById("drop-target");
+  const dropTarget2 = document.getElementById("drop-target-2");
+
+  dropTarget1.addEventListener("dragenter", (event) => {
+    event.preventDefault();
+    console.log("Target 1: dragenter");
+    dropTarget1.style.backgroundColor = "lightblue";
+  });
+  dropTarget1.addEventListener("dragleave", (event) => {
+    event.preventDefault();
+    console.log("Target 1: dragleave");
+    dropTarget1.style.backgroundColor = "lightgreen";
+  });
+  dropTarget1.addEventListener("drop", (event) => {
+    event.preventDefault();
+    console.log("Target 1: drop");
+    dropTarget1.style.backgroundColor = "lightgreen";
+    const data = event.dataTransfer.getData("text/plain");
+    console.log("Dropped data: " + data);
+  });  
+
+  dropTarget2.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    console.log("Target 2: dragenter");
+    dropTarget2.style.backgroundColor = "lightcoral";
+  });
+  dropTarget2.addEventListener("dragleave", (event) => {
+    event.preventDefault();
+    console.log("Target 2: dragleave");
+    dropTarget2.style.backgroundColor = "lightsalmon";
+  });
+  dropTarget2.addEventListener("drop", (event) => {
+    event.preventDefault();
+    console.log("Target 2: drop");
+    dropTarget2.style.backgroundColor = "lightsalmon";
+    const data = event.dataTransfer.getData("text/plain");
+    console.log("Dropped data: " + data);
+  });  
+}
+
+let parentEntryWidth = 30000;
+
+function initializeOfficeDragAndDropHandlers() {
+       // Handle the DragAndDropEvent event.
+    Office.context.mailbox.addHandlerAsync(
+      Office.EventType.DragAndDropEvent,
+      (event) => {
+        const eventData = event.dragAndDropEventData;
+
+        if(eventData.type == "dragover"){
+          const {possibleX, possibleY} = reScaleCoordinates(eventData.pageX, eventData.pageY);
+          const elementUnderCursor = document.elementFromPoint(possibleX, possibleY);
+          
+          if(elementUnderCursor){
+            elementUnderCursor.dispatchEvent(new DragEvent('dragover', {
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: possibleX,
+                    clientY: possibleY,
+              }));
+          }  
+        }
+
+        // Get the file name and the contents of the items dropped into the task pane.
+        if (eventData.type == "drop") {
+          console.log(eventData);
+          //console.log("pageX: " + eventData.pageX + ", pageY: " + eventData.pageY);
+          const files = eventData.dataTransfer.files;
+          files.forEach((file) => {
+            const content = file.fileContent;
+            const name = file.name;
+
+            // Add operations to process the item here, such as uploading the file to a CRM system.
+            console.log(`File name: ${name}, File content: ${content}`);
+          });
+        }
+      },
+      (asyncResult) => {
+        if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+          console.error("Failed to add Office.EventType.DragAndDropEvent handler:", asyncResult.error.message);
+          return;
+        }
+
+        console.log("Event handler added successfully.");
+      }
+    );
+}
+
+function reScaleCoordinates(pageX, pageY){
+  // Issue: This will only work if user is draging from left to right.
+  parentEntryWidth = Math.min(pageX, parentEntryWidth);
+  const possibleX = pageX - parentEntryWidth;
+
+  //Issue: The value 113 is hardcoded for now. Need to find a way to get this value dynamically.
+  const possibleY = pageY - 113;
+
+  //var iframeRect = window.frameElement.getBoundingClientRect();
+  //console.log(`iFrame Left: ${iframeRect.left}, Top: ${iframeRect.top}`);
+
+  const width = document.documentElement.clientWidth;
+  const height = document.documentElement.clientHeight;
+  //console.log(`Frame Width: ${width}, Height: ${height}`);  
+
+  //var fOffset = computeFrameOffset(window);
+  //console.log(`Frame Offset Left: ${fOffset.left}, Top: ${fOffset.top}`);
+  //console.log(`window.top: ${window.top}`);
+  //console.log(`window.parent: ${window.parent}`);
+
+  return { possibleX, possibleY };
+}
+
+function gP(e){var left=0;var top=0; while (e.offsetParent){ left+=e.offsetLeft-e.scrollLeft;top+=e.offsetTop-e.scrollTop;e=e.offsetParent;}return {x:left, y:top};}
+window.getPos = gP;
+
+/**
+ * Calculate the offset of the given iframe relative to the top window.
+ * - Walks up the iframe chain, checking the offset of each one till it reaches top
+ * - Only works with friendly iframes. https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy#Cross-origin_script_API_access 
+ * - Takes into account scrolling, but comes up with a result relative to 
+ *   top iframe, regardless of being visibile withing intervening frames.
+ * 
+ * @param window win    the iframe we're interested in (e.g. window)
+ * @param object dims   an object containing the offset so far:
+ *                          { left: [x], top: [y] }
+ *                          (optional - initializes with 0,0 if undefined) 
+ * @return dims object above
+ */
+var computeFrameOffset = function(win, dims) {
+    // initialize our result variable
+    if (typeof dims === 'undefined') {
+        var dims = { top: 0, left: 0 };
+    }
+
+    // find our <iframe> tag within our parent window
+    var frames = win.parent.document.getElementsByTagName('iframe');
+    var frame;
+    var found = false;
+
+    for (var i=0, len=frames.length; i<len; i++) {
+        frame = frames[i];
+        if (frame.contentWindow == win) {
+            found = true;
+            break;
+        }
+    }
+
+    // add the offset & recur up the frame chain
+    if (found) {
+        var rect = frame.getBoundingClientRect();
+        dims.left += rect.left;
+        dims.top += rect.top;
+        if (win !== top) {
+            computeFrameOffset(win.parent, dims);
+        }
+    }
+    return dims;
+};
+
+function SetDefaultMessageProperties() {
+  // Check if the message has a recipient.  If not, add 1@demonmaths.co.uk as the recipient
+  Office.context.mailbox.item.to.getAsync((asyncResult) => {
+    if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+      const recipients = asyncResult.value;
+      if (recipients.length === 0 && testRecipient.length > 0) {
+        // No recipients found, add default recipient
+        Office.context.mailbox.item.to.addAsync([testRecipient], (asyncResult) => {
+          if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+            console.log("Default recipient added.");
+          } else {
+            console.error("Failed to add default recipient:", asyncResult.error.message);
+          }
+        });
+      }
+    } else {
+      console.error("Failed to get recipients:", asyncResult.error.message);
+    }
+  });
+
+  // Check if the message has a subject.  If not, set it to "Testing Extended Properties" with the current date and time
+  Office.context.mailbox.item.subject.getAsync((asyncResult) => {
+    if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+      const subject = asyncResult.value;
+      if (!subject) {
+        const currentDateTime = new Date().toISOString();
+        Office.context.mailbox.item.subject.setAsync(`Testing Extended Properties - ${currentDateTime}`, (asyncResult) => {
+          if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+            console.log("Subject set successfully.");
+          } else {
+            console.error("Failed to set subject:", asyncResult.error.message);
+          }
+        });
+      }
+    } else {
+      console.error("Failed to get subject:", asyncResult.error.message);
+    }
+  });
+
+}
+
+async function setExtendedProperties() {
+  SetDefaultMessageProperties();
+
+  // Set extended property named daves.tips with a value set to current date and time
+  console.log("Attempting to set extended property");
+  const currentDateTime = new Date().toISOString();
+  // Load extended properties
+  await sleep(2000);
+  Office.context.mailbox.item.loadCustomPropertiesAsync((asyncResult) => {
+    if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+      const customProps = asyncResult.value;      
+      customProps.set("daves.tips", currentDateTime);
+      console.log(`Set extended property daves.tips to ${currentDateTime}`);
+      customProps.saveAsync((asyncResult) => {
+        if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+          console.log("Extended properties saved successfully.");
+          // Prepend success to message body
+          Office.context.mailbox.item.body.prependAsync(`Successfully set extended property daves.tips to ${currentDateTime}\n\n`, (asyncResult) => {
+            if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+              console.log("Message body prepended successfully.");
+              Office.context.mailbox.item.saveAsync();
+            } else {
+              console.error("Failed to prepend message body:", asyncResult.error.message);
+            }
+          });
+        } else {
+          console.error("Failed to save extended properties:", asyncResult.error.message);
+        }
+      });
+    } else {
+      console.error("Failed to load custom properties:", asyncResult.error.message);
+    }
+  });
+}
+
+/**
+ * Sleep function for JavaScript
+ * @param {number} ms - Time to sleep in milliseconds
+ * @returns {Promise<void>}
+ */
+function sleep(ms) {
+    return new Promise((resolve, reject) => {
+        // Validate input
+        if (typeof ms !== 'number' || ms < 0 || !Number.isFinite(ms)) {
+            reject(new Error("Invalid delay time. Must be a non-negative number."));
+            return;
+        }
+        setTimeout(resolve, ms);
+    });
 }
