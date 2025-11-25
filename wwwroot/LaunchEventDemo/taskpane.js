@@ -662,7 +662,7 @@ var computeFrameOffset = function(win, dims) {
     return dims;
 };
 
-function SetDefaultMessageProperties() {
+function SetDefaultMessageProperties(subject) {
   // Check if the message has a recipient.  If not, add 1@demonmaths.co.uk as the recipient
   Office.context.mailbox.item.to.getAsync((asyncResult) => {
     if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
@@ -682,13 +682,16 @@ function SetDefaultMessageProperties() {
     }
   });
 
-  // Check if the message has a subject.  If not, set it to "Testing Extended Properties" with the current date and time
+  // Check if the message has a subject.  If not, set it to the given value with the current date and time
+  if (!subject || subject.length === 0) {
+    subject = "Test";
+  }
   Office.context.mailbox.item.subject.getAsync((asyncResult) => {
     if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
       const subject = asyncResult.value;
       if (!subject) {
         const currentDateTime = new Date().toISOString();
-        Office.context.mailbox.item.subject.setAsync(`Testing Extended Properties - ${currentDateTime}`, (asyncResult) => {
+        Office.context.mailbox.item.subject.setAsync(`${subject} - ${currentDateTime}`, (asyncResult) => {
           if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
             console.log("Subject set successfully.");
           } else {
@@ -704,7 +707,7 @@ function SetDefaultMessageProperties() {
 }
 
 async function setExtendedProperties() {
-  SetDefaultMessageProperties();
+  SetDefaultMessageProperties("Testing Extended Properties");
 
   // Set extended property named daves.tips with a value set to current date and time
   console.log("Attempting to set extended property");
