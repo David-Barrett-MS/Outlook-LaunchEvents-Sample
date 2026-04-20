@@ -3,11 +3,15 @@
  * See LICENSE in the project root for license information.
  */
 
+
+console.log("LaunchEvent Add-in Loaded");
+
 var statusInfo = "";
 var fullLogEventAPIUrl = ""; // The API URL including any additional parameters
 var baseLogEventAPIUrl = ""; // The API URL
 var addinSettings;
 var showSmartAlert = false;
+var clientDelayInSeconds = 0;
 const AddinName = "LaunchEventDemo";
 
 //Office.onReady();
@@ -15,6 +19,26 @@ Office.initialize = function () {
     // This function is not called during OnMessageSend LaunchEvent in Outlook Desktop, so any initialisation here won't work in that scenario
     ReadAddinSettings();
 }
+
+async function sleep(ms) {
+    return new Promise((resolve, reject) => {
+        if (typeof ms !== 'number' || ms < 0 || !Number.isFinite(ms)) {
+            return reject(new Error("Invalid delay: must be a non-negative number."));
+        }
+        setTimeout(resolve, ms);
+    });
+}
+
+// Try and trigger timing related error - we add a delay here
+var startWaitTime = Date.now();
+//for (let i = 0; i < 10000000000; i++) {
+//    if (i % 100000000 == 0) {
+//        console.log("Waiting...");
+//    }
+//}
+//(async () => { await sleep(10000); })();
+
+console.log("Done waiting, waited for " + (Date.now() - startWaitTime)/1000 + " seconds");
 
 /**
  * Reads the add-in settings and updates the fullLogEventAPIUrl variable accordingly.
@@ -40,6 +64,10 @@ function ReadAddinSettings() {
             fullLogEventAPIUrl = fullLogEventAPIUrl + "?DelayInSeconds=" + apiDelay
             console.log(FormatLog("API URL adjusted: " + fullLogEventAPIUrl));
         }
+
+        clientDelayInSeconds = addinSettings.get("clientDelay");
+        console.log(FormatLog("Client delay: " + clientDelayInSeconds));
+
         console.log(FormatLog("Finished reading add-in settings"));
     }
 
@@ -113,7 +141,7 @@ async function logEvent(eventData, event) {
     }
 
     if (event != null) {
-        event.completed({ allowEvent: true });
+        logEventCompleted(eventData, event);
     }
 }
 
@@ -137,10 +165,10 @@ async function logEvent2(eventData, event) {
         xhr.onreadystatechange = function () {
             if (this.readyState == 4) {
                 if (event != null && (this.status == 200 || (addinSettings.get("blockOnAPIFail") != true && addinSettings.get("blockOnAPIFail") != "true")) ) {
-                    event.completed({ allowEvent: true });
+                    logEventCompleted(eventData, event);
                 }
                 else if (event != null) {
-                    event.completed({ allowEvent: false, errorMessage:"Failed to contact API" });
+                    logEventCompleted(eventData, event, "Failed to contact API");
                 }
             }
         }
@@ -150,7 +178,19 @@ async function logEvent2(eventData, event) {
         xhr.send(eventData);
     } else {
         if (event != null) {
-            event.completed({ allowEvent: false, errorMessage:"API URL not set - open TaskPane to configure" });
+            logEventCompleted(eventData, event, "API URL not set - open TaskPane to configure");
+        }
+    }
+}
+
+function logEventCompleted(eventData, event, errorMessage) {
+    if (event != null) {
+        if (errorMessage) {
+            console.log(FormatLog(eventData + ": Sending event.completed with error: " + errorMessage));
+            event.completed({ allowEvent: false, errorMessage: errorMessage });
+        } else {
+            console.log(FormatLog(eventData + ": Sending event.completed"));
+            event.completed({ allowEvent: true });
         }
     }
 }
@@ -158,23 +198,30 @@ async function logEvent2(eventData, event) {
 // <LaunchEvent Type="OnMessageSend" FunctionName="onMessageSendHandler" SendMode="SoftBlock"/>
 function onMessageSendHandler(event) {
     //applyInsightMessage(null);
-    logEvent2("OnMessageSend", null).then(() => {
-        if (showSmartAlert) {
-            event.completed({
-                allowEvent: false,
-                errorMessage: "You have not selected any filing options.  To Send & File this email you need to open the filing options panel and select a filing location before sending.",
-                // TIP: In addition to the formatted message, it's recommended to also set a
-                // plain text message in the errorMessage property for compatibility on
-                // older versions of Outlook clients.
-                errorMessageMarkdown: "You have not selected any filing options.  To Send & File this email you need to open the filing options panel and select a filing location before sending.",
-                cancelLabel: "Open Filing Options",
-                commandId: "msgComposeOpenPaneButton"
-            });            // Show the custom smart alert dialog
-        }
-        else {
-            event.completed({ allowEvent: true });
-        }
-    })
+
+    if (showSmartAlert) {
+        event.completed({
+            allowEvent: false,
+            errorMessage: "You have not selected any filing options.  To Send & File this email you need to open the filing options panel and select a filing location before sending.",
+            // TIP: In addition to the formatted message, it's recommended to also set a
+            // plain text message in the errorMessage property for compatibility on
+            // older versions of Outlook clients.
+            errorMessageMarkdown: "You have not selected any filing options.  To Send & File this email you need to open the filing options panel and select a filing location before sending.",
+            cancelLabel: "Open Filing Options",
+            commandId: "msgComposeOpenPaneButton"
+        });            // Show the custom smart alert dialog
+        return;
+    }
+
+    if (clientDelayInSeconds > 0) {
+        setTimeout(() => {
+            logEvent2("OnMessageSend", event);
+            //logEventCompleted("OnMessageSend", event);
+        }, clientDelayInSeconds * 1000);
+        return;
+    }
+    
+    logEvent2("OnMessageSend", event);
 }
 
 
@@ -187,7 +234,7 @@ function OnAppointmentSendHandler(event) {
 // <LaunchEvent Type="OnNewMessageCompose" FunctionName="OnNewMessageComposeHandler"/>
 function OnNewMessageComposeHandler(event) {
     logEvent("OnNewMessageCompose", null).then(() => {
-        event.completed({ allowEvent: false });
+        logEventCompleted("OnNewMessageCompose",event);
     })
 }
 
@@ -289,3 +336,5 @@ if (Office.context !== undefined && (Office.context.platform === Office.Platform
     // Office.actions.associate("OnMessageReadWithCustomAttachmentHandler", OnMessageReadWithCustomAttachmentHandler);
     // Office.actions.associate("OnMessageReadWithCustomHeaderHandler", OnMessageReadWithCustomHeaderHandler);
 }
+
+

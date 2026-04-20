@@ -24,6 +24,8 @@ let logEventAPI = "";
  */
 let apiDelayInSeconds = 0;
 
+let clientDelayInSeconds = 0;
+
 /**
  * Test recipient (used when sending emails or invites during tests)
  * @type {string}
@@ -99,6 +101,15 @@ Office.initialize = function () {
       settingsUpdated = true;
   }
 
+  var clientDelay = addinSettings.get("clientDelay");
+  if (clientDelay > 0) {
+      clientDelayInSeconds = clientDelay;
+  } else if (clientDelay==null) {
+      clientDelayInSeconds = 0;
+      addinSettings.set("clientDelay", clientDelayInSeconds);
+      settingsUpdated = true;
+  }
+
   testRecipient = addinSettings.get("testRecipient");
   if (testRecipient == null) {
     addinSettings.set("testRecipient", "");
@@ -126,6 +137,10 @@ Office.initialize = function () {
   var apiDelayInput = document.getElementById("apiDelayInput");
   apiDelayInput.value = apiDelay;
   apiDelayInput.onchange = UpdateApiDelay;
+
+  var clientDelayInput = document.getElementById("clientDelayInput");
+  clientDelayInput.value = clientDelayInSeconds;
+  clientDelayInput.onchange = UpdateClientDelay;
 
   var testRecipientInput = document.getElementById("testRecipient");
   testRecipientInput.value = testRecipient;
@@ -161,6 +176,16 @@ function UpdateApiDelay() {
     if (apiDelay != apiDelayInSeconds) {
         apiDelayInSeconds = Number(apiDelay);
         addinSettings.set("apiDelay", apiDelayInSeconds);
+        addinSettings.saveAsync(null);
+    }
+}
+
+function UpdateClientDelay() {
+    console.log("UpdateClientDelay called");
+    var clientDelay = document.getElementById("clientDelayInput").value;
+    if (clientDelay != clientDelayInSeconds) {
+        clientDelayInSeconds = Number(clientDelay);
+        addinSettings.set("clientDelay", clientDelayInSeconds);
         addinSettings.saveAsync(null);
     }
 }
@@ -553,32 +578,36 @@ function initializeOfficeDragAndDropHandlers() {
       (event) => {
         const eventData = event.dragAndDropEventData;
 
-        if(eventData.type == "dragover"){
-          const {possibleX, possibleY} = reScaleCoordinates(eventData.pageX, eventData.pageY);
-          const elementUnderCursor = document.elementFromPoint(possibleX, possibleY);
-          
-          if(elementUnderCursor){
-            elementUnderCursor.dispatchEvent(new DragEvent('dragover', {
-                    bubbles: true,
-                    cancelable: true,
-                    clientX: possibleX,
-                    clientY: possibleY,
-              }));
-          }  
+        if(eventData.type == "dragover"){          
+          if (eventData.taskpaneX) {
+            const elementUnderCursor = document.elementFromPoint(eventData.taskpaneX, eventData.taskpaneY);
+            
+            if(elementUnderCursor){
+              elementUnderCursor.dispatchEvent(new DragEvent('dragover', {
+                      bubbles: true,
+                      cancelable: true,
+                      clientX: eventData.taskpaneX,
+                      clientY: eventData.taskpaneY,
+                }));
+            }
+          }
         }
 
         // Get the file name and the contents of the items dropped into the task pane.
         if (eventData.type == "drop") {
+          if (eventData.taskpaneX) {
+            const elementUnderCursor = document.elementFromPoint(eventData.taskpaneX, eventData.taskpaneY);
+            
+            if(elementUnderCursor){
+              elementUnderCursor.dispatchEvent(new DragEvent('drop', {
+                      bubbles: true,
+                      cancelable: true,
+                      clientX: eventData.taskpaneX,
+                      clientY: eventData.taskpaneY,
+                }));
+            }
+          }
           console.log(eventData);
-          //console.log("pageX: " + eventData.pageX + ", pageY: " + eventData.pageY);
-          const files = eventData.dataTransfer.files;
-          files.forEach((file) => {
-            const content = file.fileContent;
-            const name = file.name;
-
-            // Add operations to process the item here, such as uploading the file to a CRM system.
-            console.log(`File name: ${name}, File content: ${content}`);
-          });
         }
       },
       (asyncResult) => {
@@ -591,76 +620,6 @@ function initializeOfficeDragAndDropHandlers() {
       }
     );
 }
-
-function reScaleCoordinates(pageX, pageY){
-  // Issue: This will only work if user is draging from left to right.
-  parentEntryWidth = Math.min(pageX, parentEntryWidth);
-  const possibleX = pageX - parentEntryWidth;
-
-  //Issue: The value 113 is hardcoded for now. Need to find a way to get this value dynamically.
-  const possibleY = pageY - 113;
-
-  //var iframeRect = window.frameElement.getBoundingClientRect();
-  //console.log(`iFrame Left: ${iframeRect.left}, Top: ${iframeRect.top}`);
-
-  const width = document.documentElement.clientWidth;
-  const height = document.documentElement.clientHeight;
-  //console.log(`Frame Width: ${width}, Height: ${height}`);  
-
-  //var fOffset = computeFrameOffset(window);
-  //console.log(`Frame Offset Left: ${fOffset.left}, Top: ${fOffset.top}`);
-  //console.log(`window.top: ${window.top}`);
-  //console.log(`window.parent: ${window.parent}`);
-
-  return { possibleX, possibleY };
-}
-
-function gP(e){var left=0;var top=0; while (e.offsetParent){ left+=e.offsetLeft-e.scrollLeft;top+=e.offsetTop-e.scrollTop;e=e.offsetParent;}return {x:left, y:top};}
-window.getPos = gP;
-
-/**
- * Calculate the offset of the given iframe relative to the top window.
- * - Walks up the iframe chain, checking the offset of each one till it reaches top
- * - Only works with friendly iframes. https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy#Cross-origin_script_API_access 
- * - Takes into account scrolling, but comes up with a result relative to 
- *   top iframe, regardless of being visibile withing intervening frames.
- * 
- * @param window win    the iframe we're interested in (e.g. window)
- * @param object dims   an object containing the offset so far:
- *                          { left: [x], top: [y] }
- *                          (optional - initializes with 0,0 if undefined) 
- * @return dims object above
- */
-var computeFrameOffset = function(win, dims) {
-    // initialize our result variable
-    if (typeof dims === 'undefined') {
-        var dims = { top: 0, left: 0 };
-    }
-
-    // find our <iframe> tag within our parent window
-    var frames = win.parent.document.getElementsByTagName('iframe');
-    var frame;
-    var found = false;
-
-    for (var i=0, len=frames.length; i<len; i++) {
-        frame = frames[i];
-        if (frame.contentWindow == win) {
-            found = true;
-            break;
-        }
-    }
-
-    // add the offset & recur up the frame chain
-    if (found) {
-        var rect = frame.getBoundingClientRect();
-        dims.left += rect.left;
-        dims.top += rect.top;
-        if (win !== top) {
-            computeFrameOffset(win.parent, dims);
-        }
-    }
-    return dims;
-};
 
 function SetDefaultMessageProperties(subject) {
   // Check if the message has a recipient.  If not, add 1@demonmaths.co.uk as the recipient
@@ -688,8 +647,8 @@ function SetDefaultMessageProperties(subject) {
   }
   Office.context.mailbox.item.subject.getAsync((asyncResult) => {
     if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
-      const subject = asyncResult.value;
-      if (!subject) {
+      const currentSubject = asyncResult.value;
+      if (!currentSubject) {
         const currentDateTime = new Date().toISOString();
         Office.context.mailbox.item.subject.setAsync(`${subject} - ${currentDateTime}`, (asyncResult) => {
           if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
@@ -703,7 +662,24 @@ function SetDefaultMessageProperties(subject) {
       console.error("Failed to get subject:", asyncResult.error.message);
     }
   });
+}
 
+async function saveExtendedPropertiesComplete(asyncResult) {
+  if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+    console.log("Extended properties saved successfully.");
+    await sleep(2000);
+    // Prepend success to message body
+    Office.context.mailbox.item.body.prependAsync(`Successfully set extended property daves.tips\n\n`, (asyncResult) => {
+      if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+        console.log("Message body prepended successfully.");
+        //Office.context.mailbox.item.saveAsync();
+      } else {
+        console.error("Failed to prepend message body:", asyncResult.error.message);
+      }
+    });
+  } else {
+    console.error("Failed to save extended properties:", asyncResult.error.message);
+  }
 }
 
 async function setExtendedProperties() {
@@ -713,28 +689,13 @@ async function setExtendedProperties() {
   console.log("Attempting to set extended property");
   const currentDateTime = new Date().toISOString();
   // Load extended properties
-  await sleep(2000);
+  //await sleep(2000);
   Office.context.mailbox.item.loadCustomPropertiesAsync((asyncResult) => {
     if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
       const customProps = asyncResult.value;      
       customProps.set("daves.tips", currentDateTime);
       console.log(`Set extended property daves.tips to ${currentDateTime}`);
-      customProps.saveAsync((asyncResult) => {
-        if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
-          console.log("Extended properties saved successfully.");
-          // Prepend success to message body
-          Office.context.mailbox.item.body.prependAsync(`Successfully set extended property daves.tips to ${currentDateTime}\n\n`, (asyncResult) => {
-            if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
-              console.log("Message body prepended successfully.");
-              Office.context.mailbox.item.saveAsync();
-            } else {
-              console.error("Failed to prepend message body:", asyncResult.error.message);
-            }
-          });
-        } else {
-          console.error("Failed to save extended properties:", asyncResult.error.message);
-        }
-      });
+      customProps.saveAsync((asyncResult) => saveExtendedPropertiesComplete(asyncResult));
     } else {
       console.error("Failed to load custom properties:", asyncResult.error.message);
     }
