@@ -25,6 +25,7 @@
 <body class="ms-font-m ms-welcome ms-Fabric ms-bgColor-neutralLighter">
     <header class="ms-welcome__header ms-bgColor-neutralLighter">
         <h1 class="ms-font-su"><img width="90" height="90" src="assets/icon-300.png" alt="LaunchEventsDemo Logo" title="LaunchEventsDemo Logo" style="vertical-align: middle;"/>LaunchEventDemo</h1>
+        <a href="EventViewer.html" target="_blank" class="ms-font-m" style="display:inline-block;margin-top:6px;"Open Event Viewer</a>
     </header>
     <section class="ms-font-m">
         <h3>Message Information</h3>
@@ -62,6 +63,10 @@
         <div role="button" id="createNewAppointment" class="ms-Button ms-Button--hero ms-font-xl" style="display:block">
             <span class="ms-Button-label">Create New Appointment</span>
         </div>
+        <!-- Set SessionData flag -->
+        <div role="button" id="setSessionData" class="ms-Button ms-Button--hero ms-font-xl" style="display:block">
+            <span class="ms-Button-label">Set SessionData Flag</span>
+        </div>
     </section>
     <section class="ms-font-m">
         <h3>Drag/drop tests</h3>
@@ -75,6 +80,16 @@
             <div id="drop-target-2" class="drop-target" style="width: 100px;height: 50px;margin-top: 10px;background-color: lightsalmon; display: inline-block;">
                 <p class="ms-font-l">Target 2</p>
             </div>
+        </div>
+    </section>
+        <section class="ms-font-m">
+        <h3>Copy body to clipboard</h3>
+            <div role="button" id="copyAsText" class="ms-Button ms-Button--hero ms-font-xl" style="display:block">
+                <span class="ms-Button-label">As text</span>
+            </div>          
+            <div role="button" id="copyAsHTML" class="ms-Button ms-Button--hero ms-font-xl" style="display:block">
+                <span class="ms-Button-label">As HTML</span>
+            </div>          
         </div>
     </section>
     <section class="ms-font-m">

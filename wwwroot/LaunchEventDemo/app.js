@@ -161,26 +161,50 @@ async function logEvent2(eventData, event) {
         } else {
             eventData = AddinName + ": " + eventData;
         }
-        var xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function () {
-            if (this.readyState == 4) {
-                if (event != null && (this.status == 200 || (addinSettings.get("blockOnAPIFail") != true && addinSettings.get("blockOnAPIFail") != "true")) ) {
-                    logEventCompleted(eventData, event);
+        
+        // Check for sessionData and append if available (for send events)
+        if (eventData.includes("Send") && Office.context.mailbox.item.sessionData) {
+            Office.context.mailbox.item.sessionData.getAllAsync((asyncResult) => {
+                if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+                    const sessionData = asyncResult.value;
+                    if (sessionData && Object.keys(sessionData).length > 0) {
+                        console.log(FormatLog("SessionData found:"));
+                        for (const key in sessionData) {
+                            console.log(FormatLog(`  ${key} = ${sessionData[key]}`));
+                            eventData += ` | SessionData: ${key}=${sessionData[key]}`;
+                        }
+                    }
                 }
-                else if (event != null) {
-                    logEventCompleted(eventData, event, "Failed to contact API");
-                }
-            }
+                // Send the request after checking sessionData
+                sendLogEventRequest(eventData, event);
+            });
+        } else {
+            // Send immediately if not a send event or sessionData not available
+            sendLogEventRequest(eventData, event);
         }
-        xhr.timeout = 300000; // The maximum time that Outlook allows for an event based add-in to complete the event
-        xhr.open("POST", fullLogEventAPIUrl, true);
-        xhr.setRequestHeader("Content-Type", "text/plain; charset=UTF-8"); 
-        xhr.send(eventData);
     } else {
         if (event != null) {
             logEventCompleted(eventData, event, "API URL not set - open TaskPane to configure");
         }
     }
+}
+
+function sendLogEventRequest(eventData, event) {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function () {
+        if (this.readyState == 4) {
+            if (event != null && (this.status == 200 || (addinSettings.get("blockOnAPIFail") != true && addinSettings.get("blockOnAPIFail") != "true")) ) {
+                logEventCompleted(eventData, event);
+            }
+            else if (event != null) {
+                logEventCompleted(eventData, event, "Failed to contact API");
+            }
+        }
+    }
+    xhr.timeout = 300000; // The maximum time that Outlook allows for an event based add-in to complete the event
+    xhr.open("POST", fullLogEventAPIUrl, true);
+    xhr.setRequestHeader("Content-Type", "text/plain; charset=UTF-8"); 
+    xhr.send(eventData);
 }
 
 function logEventCompleted(eventData, event, errorMessage) {
@@ -216,12 +240,10 @@ function onMessageSendHandler(event) {
     if (clientDelayInSeconds > 0) {
         setTimeout(() => {
             logEvent2("OnMessageSend", event);
-            //logEventCompleted("OnMessageSend", event);
         }, clientDelayInSeconds * 1000);
-        return;
+    } else {
+        logEvent2("OnMessageSend", event);
     }
-    
-    logEvent2("OnMessageSend", event);
 }
 
 

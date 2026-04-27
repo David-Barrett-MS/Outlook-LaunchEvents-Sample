@@ -153,6 +153,9 @@ Office.initialize = function () {
   document.getElementById("sendMessage").onclick = sendMessage;
   document.getElementById("createNewAppointment").onclick = createNewAppointment;
   document.getElementById("setProps").onclick = setExtendedProperties;
+  document.getElementById("copyAsText").onclick = copyBodyToClipboardAsText;
+  document.getElementById("copyAsHTML").onclick = copyBodyToClipboardAsHTML;
+  document.getElementById("setSessionData").onclick = setSessionData;
 
   // Set up the ItemChanged event.
   if (Office.context.mailbox.item == null) {
@@ -700,6 +703,50 @@ async function setExtendedProperties() {
       console.error("Failed to load custom properties:", asyncResult.error.message);
     }
   });
+}
+
+function copyBodyToClipboardAsHTML() {
+  copyBodyToClipboard(true);
+}
+
+function copyBodyToClipboardAsText() {
+  copyBodyToClipboard(false);
+}
+
+function copyBodyToClipboard(asHTML = false) {
+  console.log("Copying body content to clipboard...");
+  const bodyType = asHTML ? Office.CoercionType.Html : Office.CoercionType.Text;
+  Office.context.mailbox.item.body.getAsync(bodyType, (asyncResult) => {
+    if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+      const text = asyncResult.value;
+      console.log(text);
+      navigator.clipboard.writeText(text).then(() => {
+        console.log("Body content copied to clipboard.");
+      }).catch((error) => {
+        console.error("Failed to copy body content to clipboard:", error);
+      });
+    } else {
+      console.error("Failed to get body content:", asyncResult.error.message);
+    }
+  });
+}
+
+function setSessionData() {
+  console.log("Setting sessionData flag");
+  const currentDateTime = new Date().toISOString();
+  
+  Office.context.mailbox.item.sessionData.setAsync(
+    "testFlag",
+    `Set at ${currentDateTime}`,
+    (asyncResult) => {
+      if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+        console.log("SessionData flag set successfully");
+        console.log(`testFlag = Set at ${currentDateTime}`);
+      } else {
+        console.error("Failed to set sessionData:", asyncResult.error.message);
+      }
+    }
+  );
 }
 
 /**
