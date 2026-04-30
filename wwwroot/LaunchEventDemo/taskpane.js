@@ -85,9 +85,11 @@ Office.initialize = function () {
   var apiUrl = addinSettings.get("apiUrl");
   if (apiUrl) {
       logEventAPI = apiUrl;
+      console.log("Using stored API URL: " + logEventAPI);
   }
   else {
       logEventAPI = window.location.origin + "/TestAPI/LogEventDelayed";
+      console.log("No stored API URL, calculated endpoint: " + logEventAPI);
       addinSettings.set("apiUrl", logEventAPI);
       settingsUpdated = true;
   }
@@ -95,7 +97,7 @@ Office.initialize = function () {
   var apiDelay = addinSettings.get("apiDelay");
   if (apiDelay > 0) {
       apiDelayInSeconds = apiDelay;
-  } else if (apiDelay==null) {
+  } else if (apiDelay==null || apiDelay === undefined) {
       apiDelayInSeconds = 0;
       addinSettings.set("apiDelay", apiDelayInSeconds);
       settingsUpdated = true;
@@ -126,8 +128,14 @@ Office.initialize = function () {
   });
 
   if (settingsUpdated) {
-    addinSettings.saveAsync(null);
-    console.log("Settings written");
+    console.log("Settings updated with default values, saving settings");
+    addinSettings.saveAsync(function(result) {
+      if (result.status !== Office.AsyncResultStatus.Succeeded) {
+        console.error(`Save settings failed with message ${result.error.message}`);
+      } else {
+        console.log(`Settings saved with status: ${result.status}`);
+      }
+    });
   } else {
     console.log("Settings read");
   }
@@ -135,7 +143,7 @@ Office.initialize = function () {
   document.getElementById("apiUrlInput").value = apiUrl;
 
   var apiDelayInput = document.getElementById("apiDelayInput");
-  apiDelayInput.value = apiDelay;
+  apiDelayInput.value = apiDelayInSeconds;
   apiDelayInput.onchange = UpdateApiDelay;
 
   var clientDelayInput = document.getElementById("clientDelayInput");
@@ -168,6 +176,9 @@ Office.initialize = function () {
 
   initializeHTMLDragDropHandlers();
   initializeOfficeDragAndDropHandlers();
+  
+  // Initialize collapsible Add-in Configuration section
+  initializeCollapsibleConfig();
 }
 
 /**
@@ -622,6 +633,35 @@ function initializeOfficeDragAndDropHandlers() {
         console.log("Event handler added successfully.");
       }
     );
+}
+
+function initializeCollapsibleConfig() {
+  const header = document.getElementById('configHeader');
+  const content = document.getElementById('addInConfiguration');
+  const apiUrlInput = document.getElementById('apiUrlInput');
+  
+  if (!header || !content || !apiUrlInput) {
+    console.log("Collapsible config elements not found");
+    return;
+  }
+  
+  // Check if API URL is configured
+  const isConfigured = apiUrlInput.value && apiUrlInput.value.trim() !== '';
+  
+  // Set initial state: open if not configured, closed if configured
+  if (isConfigured) {
+    content.classList.add('collapsed');
+    header.classList.add('collapsed');
+    console.log("Add-in Configuration collapsed (API URL is configured)");
+  } else {
+    console.log("Add-in Configuration expanded (API URL not configured)");
+  }
+  
+  // Toggle on click
+  header.addEventListener('click', function() {
+    content.classList.toggle('collapsed');
+    header.classList.toggle('collapsed');
+  });
 }
 
 function SetDefaultMessageProperties(subject) {
