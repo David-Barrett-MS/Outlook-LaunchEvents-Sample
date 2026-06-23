@@ -76,7 +76,9 @@ ShowConsoleInTaskPane(document.getElementById("debugConsole"));
 /**
  * The Office.initialize function that gets called when the Office.js library is loaded.
  */
-Office.initialize = function () {
+
+Office.onReady(function(info) {
+    console.log(`Office.js is now ready in ${info.host} on ${info.platform}`);
 
   // Initialize instance variables to access API objects.
   addinSettings = Office.context.roamingSettings;
@@ -122,9 +124,6 @@ Office.initialize = function () {
   // Initialise checkboxes
   addInOptions.forEach(function(addinOption) {
     settingsUpdated = settingsUpdated | InitialiseAddinOption(addinOption);
-    showAddinSetting(addinOption);
-    var settingCheckbox = document.getElementById(addinOption + "Checkbox");
-    settingCheckbox.addEventListener("change", checkboxChanged);
   });
 
   if (settingsUpdated) {
@@ -140,7 +139,7 @@ Office.initialize = function () {
     console.log("Settings read");
   }
 
-  document.getElementById("apiUrlInput").value = apiUrl;
+  document.getElementById("apiUrlInput").value = logEventAPI;
 
   var apiDelayInput = document.getElementById("apiDelayInput");
   apiDelayInput.value = apiDelayInSeconds;
@@ -179,7 +178,21 @@ Office.initialize = function () {
   
   // Initialize collapsible Add-in Configuration section
   initializeCollapsibleConfig();
-}
+  
+  // Initialize send requirements checkbox
+  initializeSendRequirementsCheckbox();
+  
+  // Initialize settings checkboxes after a brief delay to ensure Fabric has finished
+  setTimeout(() => {
+    addInOptions.forEach(function(addinOption) {
+      showAddinSetting(addinOption);
+      var settingCheckbox = document.getElementById(addinOption + "Checkbox");
+      if (settingCheckbox) {
+        settingCheckbox.addEventListener("change", checkboxChanged);
+      }
+    });
+  }, 100);
+});
 
 /**
  * Updates the delay for the API call.
@@ -218,7 +231,7 @@ function InitialiseAddinOption(settingName) {
   var settingChanged = false;
   var settingValue = addinSettings.get(settingName);
   if (settingValue == null) {
-    addinSettings.set(settingValue, false);
+    addinSettings.set(settingName, false);
     settingChanged = true;
   }
   return settingChanged;
@@ -232,33 +245,53 @@ function showAddinSetting(settingName) {
     return;
   }
 
-  var checkboxLabel = document.getElementById(checkboxName + "Label");
-  if (checkboxLabel == null) {
-    console.log("Couldn't locate " + checkboxName + "Label");
-    return;
-  }
-
   var addinSettingValue = addinSettings.get(settingName);
   console.log(settingName + ": " + addinSettingValue);
 
-  if ((addinSettingValue == "true" || addinSettingValue == true) && !checkbox.checked) {
-    checkbox.checked = true;
-    checkboxLabel.classList.add("is-checked");
-  }
-  else if ((addinSettingValue == "false" || addinSettingValue == false) && checkbox.checked) {
-    checkbox.checked = false;
-    checkbox.classList.remove("is-checked");
+  // Set the checkbox state - Fabric will update the visual state automatically
+  checkbox.checked = (addinSettingValue == "true" || addinSettingValue == true);
+  
+  // Manually trigger Fabric to update its visual state
+  var checkboxParent = checkbox.closest('.ms-CheckBox');
+  if (checkboxParent) {
+    var label = checkboxParent.querySelector('.ms-CheckBox-field');
+    if (label) {
+      if (checkbox.checked) {
+        label.classList.add('is-checked');
+        label.setAttribute('aria-checked', 'true');
+      } else {
+        label.classList.remove('is-checked');
+        label.setAttribute('aria-checked', 'false');
+      }
+    }
   }
 }
 
 function applyCheckboxSetting(settingName) {
   var checkbox = document.getElementById(settingName + "Checkbox");
+  if (!checkbox) return;
+  
   var checkboxChecked = checkbox.checked;
   console.log(settingName + " set: " + checkboxChecked);
   addinSettings.set(settingName, checkboxChecked);
+  
+  // Update Fabric visual state to match checkbox state
+  var checkboxParent = checkbox.closest('.ms-CheckBox');
+  if (checkboxParent) {
+    var label = checkboxParent.querySelector('.ms-CheckBox-field');
+    if (label) {
+      if (checkboxChecked) {
+        label.classList.add('is-checked');
+        label.setAttribute('aria-checked', 'true');
+      } else {
+        label.classList.remove('is-checked');
+        label.setAttribute('aria-checked', 'false');
+      }
+    }
+  }
 }
 
-export function checkboxChanged() {
+function checkboxChanged() {
   // Called when any checkbox is changed from the UI (we read all checkbox values and set them)
   console.log("checkboxChanged called - reading add-in settings from UI");
 
@@ -267,6 +300,9 @@ export function checkboxChanged() {
   });
 
   addinSettings.saveAsync(null);
+  
+  // Update send requirements section visibility if showCustomSmartAlertDialog setting changed
+  updateSendRequirementsSectionVisibility();
 }
 
 function openURL(linkToOpen) {
@@ -391,6 +427,10 @@ function itemChanged(eventArgs) {
   console.log("ItemChanged event fired");
   updateTaskPaneUI(Office.context.mailbox.item);
   UpdateTestAvailability();
+  
+  // Reload send requirements for the new item
+  updateSendRequirementsSectionVisibility();
+  loadSendRequirementsMet();
 }
 
 /**
@@ -420,6 +460,7 @@ function UpdateTestAvailability()
     document.getElementById("createNewAppointment").style.display = "none";
     document.getElementById("sendMessage").style.display = "block";
     document.getElementById("applyInsightMessage").style.display = "block";
+    document.getElementById("setProps").style.display = "block";
   }
   else
   {
@@ -427,6 +468,7 @@ function UpdateTestAvailability()
     document.getElementById("createNewAppointment").style.display = "block";
     document.getElementById("sendMessage").style.display = "none";
     document.getElementById("applyInsightMessage").style.display = "none";
+    document.getElementById("setProps").style.display = "none";
   }
 }
 
@@ -435,6 +477,7 @@ function UpdateTestAvailability()
 function updateTaskPaneUI(item) {
   if (item == null) {
     console.log("Item is null, unable to read subject");
+    updateSendRequirementsSectionVisibility();
     return;
   }
 
@@ -451,6 +494,7 @@ function updateTaskPaneUI(item) {
     for (let i = 0; i < msgTo.length; i++) {
       console.log(msgTo[i].displayName + " (" + msgTo[i].emailAddress + ")");
     }
+    updateSendRequirementsSectionVisibility();
     return;
   }
   
@@ -491,6 +535,9 @@ function updateTaskPaneUI(item) {
         }
       });            
     }
+    
+    // Update send requirements section visibility after UI update
+    updateSendRequirementsSectionVisibility();
   });  
 }
 
@@ -652,7 +699,6 @@ function initializeCollapsibleConfig() {
   if (isConfigured) {
     content.classList.add('collapsed');
     header.classList.add('collapsed');
-    console.log("Add-in Configuration collapsed (API URL is configured)");
   } else {
     console.log("Add-in Configuration expanded (API URL not configured)");
   }
@@ -803,4 +849,175 @@ function sleep(ms) {
         }
         setTimeout(resolve, ms);
     });
+}
+
+/**
+ * Initialize the send requirements checkbox - show/hide based on showCustomSmartAlertDialog setting
+ * and set up event handlers
+ */
+function initializeSendRequirementsCheckbox() {
+  console.log("Initializing send requirements checkbox");
+  
+  const sendRequirementsCheckbox = document.getElementById("sendRequirementsMetCheckbox");
+  
+  if (!sendRequirementsCheckbox) {
+    console.log("Send requirements checkbox not found");
+    return;
+  }
+  
+  // Update visibility based on showCustomSmartAlertDialog setting
+  // This will also initialize Fabric CheckBox when the section is shown
+  updateSendRequirementsSectionVisibility();
+  
+  // Set up checkbox change event handler
+  sendRequirementsCheckbox.addEventListener("change", onSendRequirementsMetChanged);
+}
+
+/**
+ * Update the visibility of the send requirements section based on showCustomSmartAlertDialog setting
+ */
+function updateSendRequirementsSectionVisibility() {
+  const sendRequirementsSection = document.getElementById("sendRequirementsSection");
+  if (!sendRequirementsSection) {
+    console.log("Send requirements section element not found");
+    return;
+  }
+  
+  // Ensure addinSettings is initialized
+  if (!addinSettings) {
+    addinSettings = Office.context.roamingSettings;
+  }
+  
+  const showSmartAlert = addinSettings.get("showCustomSmartAlertDialog");
+  const isInComposeMode = inComposeMode();
+  
+  console.log("Send requirements visibility check:");
+  console.log("  showCustomSmartAlertDialog setting: " + showSmartAlert);
+  console.log("  isInComposeMode: " + isInComposeMode);
+  console.log("  item exists: " + (Office.context.mailbox.item != null));
+  if (Office.context.mailbox.item) {
+    console.log("  item type: " + Office.context.mailbox.item.itemType);
+    console.log("  subject type: " + typeof Office.context.mailbox.item.subject);
+  }
+  
+  const shouldShow = (showSmartAlert === "true" || showSmartAlert === true) && isInComposeMode;
+  
+  if (shouldShow && sendRequirementsSection.style.display === "none") {
+    // First time showing - initialize Fabric CheckBox
+    sendRequirementsSection.style.display = "block";
+    console.log("Send requirements section SHOWN - initializing Fabric CheckBox");
+    
+    const sendReqCheckboxElement = sendRequirementsSection.querySelector(".ms-CheckBox");
+    if (sendReqCheckboxElement) {
+      new fabric['CheckBox'](sendReqCheckboxElement);
+      console.log("Fabric CheckBox initialized for send requirements");
+    }
+    
+    // Load the current state after Fabric is initialized
+    setTimeout(() => {
+      loadSendRequirementsMet();
+    }, 50);
+  } else if (shouldShow) {
+    sendRequirementsSection.style.display = "block";
+    console.log("Send requirements section SHOWN");
+  } else {
+    sendRequirementsSection.style.display = "none";
+    console.log("Send requirements section HIDDEN (showSmartAlert=" + showSmartAlert + ", compose=" + isInComposeMode + ")");
+  }
+}
+
+/**
+ * Load the sendRequirementsMet property from the message and update the checkbox
+ */
+function loadSendRequirementsMet() {
+  if (!Office.context.mailbox.item || !inComposeMode()) {
+    console.log("Not in compose mode, skipping load of send requirements");
+    return;
+  }
+  
+  Office.context.mailbox.item.loadCustomPropertiesAsync((asyncResult) => {
+    if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+      const customProps = asyncResult.value;
+      const sendRequirementsMet = customProps.get("sendRequirementsMet");
+      
+      const checkbox = document.getElementById("sendRequirementsMetCheckbox");
+      
+      if (checkbox) {
+        const isChecked = (sendRequirementsMet === "true" || sendRequirementsMet === true);
+        checkbox.checked = isChecked;
+        
+        // Update Fabric visual state
+        var checkboxParent = checkbox.closest('.ms-CheckBox');
+        if (checkboxParent) {
+          var label = checkboxParent.querySelector('.ms-CheckBox-field');
+          if (label) {
+            if (isChecked) {
+              label.classList.add('is-checked');
+              label.setAttribute('aria-checked', 'true');
+            } else {
+              label.classList.remove('is-checked');
+              label.setAttribute('aria-checked', 'false');
+            }
+          }
+        }
+        
+        console.log("Send requirements met loaded: " + isChecked);
+      }
+    } else {
+      console.log("Failed to load custom properties: " + asyncResult.error.message);
+    }
+  });
+}
+
+/**
+ * Handle the send requirements checkbox change event
+ */
+function onSendRequirementsMetChanged(event) {
+  const checkbox = document.getElementById("sendRequirementsMetCheckbox");
+  
+  if (!checkbox) {
+    console.log("Send requirements checkbox not found");
+    return;
+  }
+  
+  const isChecked = checkbox.checked;
+  console.log("Send requirements met changed to: " + isChecked);
+  
+  // Update Fabric visual state
+  var checkboxParent = checkbox.closest('.ms-CheckBox');
+  if (checkboxParent) {
+    var label = checkboxParent.querySelector('.ms-CheckBox-field');
+    if (label) {
+      if (isChecked) {
+        label.classList.add('is-checked');
+        label.setAttribute('aria-checked', 'true');
+      } else {
+        label.classList.remove('is-checked');
+        label.setAttribute('aria-checked', 'false');
+      }
+    }
+  }
+  
+  // Save to message custom properties
+  if (!Office.context.mailbox.item) {
+    console.log("No mailbox item available");
+    return;
+  }
+  
+  Office.context.mailbox.item.loadCustomPropertiesAsync((asyncResult) => {
+    if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+      const customProps = asyncResult.value;
+      customProps.set("sendRequirementsMet", isChecked.toString());
+      
+      customProps.saveAsync((saveResult) => {
+        if (saveResult.status === Office.AsyncResultStatus.Succeeded) {
+          console.log("Send requirements met property saved: " + isChecked);
+        } else {
+          console.log("Failed to save send requirements met property: " + saveResult.error.message);
+        }
+      });
+    } else {
+      console.log("Failed to load custom properties: " + asyncResult.error.message);
+    }
+  });
 }

@@ -10,7 +10,6 @@ var statusInfo = "";
 var fullLogEventAPIUrl = ""; // The API URL including any additional parameters
 var baseLogEventAPIUrl = ""; // The API URL
 var addinSettings;
-var showSmartAlert = false;
 var clientDelayInSeconds = 0;
 const AddinName = "LaunchEventDemo";
 
@@ -69,10 +68,6 @@ function ReadAddinSettings() {
         console.log(FormatLog("Client delay: " + clientDelayInSeconds));
 
         console.log(FormatLog("Finished reading add-in settings"));
-    }
-
-    if (addinSettings.get("showCustomSmartAlertDialog") == "true" || addinSettings.get("showCustomSmartAlertDialog") == true) {
-        showSmartAlert = true;
     }
 }
 
@@ -175,13 +170,9 @@ async function logEvent2(eventData, event) {
                         }
                     }
                 }
-                // Send the request after checking sessionData
-                sendLogEventRequest(eventData, event);
             });
-        } else {
-            // Send immediately if not a send event or sessionData not available
-            sendLogEventRequest(eventData, event);
         }
+        sendLogEventRequest(eventData, event);
     } else {
         if (event != null) {
             logEventCompleted(eventData, event, "API URL not set - open TaskPane to configure");
@@ -193,10 +184,10 @@ function sendLogEventRequest(eventData, event) {
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
         if (this.readyState == 4) {
-            if (event != null && (this.status == 200 || (addinSettings.get("blockOnAPIFail") != true && addinSettings.get("blockOnAPIFail") != "true")) ) {
+            if (this.status == 200 || (addinSettings.get("blockOnAPIFail") != true && addinSettings.get("blockOnAPIFail") != "true") ) {
                 logEventCompleted(eventData, event);
             }
-            else if (event != null) {
+            else {
                 logEventCompleted(eventData, event, "Failed to contact API");
             }
         }
@@ -208,41 +199,77 @@ function sendLogEventRequest(eventData, event) {
 }
 
 function logEventCompleted(eventData, event, errorMessage) {
-    if (event != null) {
-        if (errorMessage) {
-            console.log(FormatLog(eventData + ": Sending event.completed with error: " + errorMessage));
-            event.completed({ allowEvent: false, errorMessage: errorMessage });
-        } else {
-            console.log(FormatLog(eventData + ": Sending event.completed"));
-            event.completed({ allowEvent: true });
-        }
+    if (errorMessage) {
+        console.log(FormatLog(eventData + ": Sending event.completed with error: " + errorMessage));
+        if (event != null) { event.completed({ allowEvent: false, errorMessage: errorMessage }); }
+    } else {
+        console.log(FormatLog(eventData + ": Sending event.completed"));
+        if (event != null) { event.completed({ allowEvent: true }); }
     }
 }
 
 // <LaunchEvent Type="OnMessageSend" FunctionName="onMessageSendHandler" SendMode="SoftBlock"/>
 function onMessageSendHandler(event) {
     //applyInsightMessage(null);
+    ReadAddinSettings();
 
-    if (showSmartAlert) {
-        event.completed({
-            allowEvent: false,
-            errorMessage: "You have not selected any filing options.  To Send & File this email you need to open the filing options panel and select a filing location before sending.",
-            // TIP: In addition to the formatted message, it's recommended to also set a
-            // plain text message in the errorMessage property for compatibility on
-            // older versions of Outlook clients.
-            errorMessageMarkdown: "You have not selected any filing options.  To Send & File this email you need to open the filing options panel and select a filing location before sending.",
-            cancelLabel: "Open Filing Options",
-            commandId: "msgComposeOpenPaneButton"
-        });            // Show the custom smart alert dialog
+    // Read showCustomSmartAlertDialog setting dynamically from add-in settings
+    var showSmartAlert = addinSettings.get("showCustomSmartAlertDialog");
+    if (showSmartAlert == "true" || showSmartAlert == true) {
+        // Check if send requirements have been met
+        Office.context.mailbox.item.loadCustomPropertiesAsync((asyncResult) => {
+            if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+                const customProps = asyncResult.value;
+                const sendRequirementsMet = customProps.get("sendRequirementsMet");
+                
+                if (sendRequirementsMet === "true" || sendRequirementsMet === true) {
+                    console.log(FormatLog("Send requirements met, allowing send"));
+                    // Requirements met, proceed with normal send flow
+                    if (clientDelayInSeconds > 0) {
+                        setTimeout(() => {
+                            logEvent2("OnMessageSend", event);
+                        }, clientDelayInSeconds * 1000);
+                    } else {
+                        logEvent2("OnMessageSend", event).then(() => { logEventCompleted("OnMessageSend", event);});
+                    }
+                } else {
+                    console.log(FormatLog("Send requirements not met, blocking send"));
+                    // Requirements not met, show smart alert
+                    event.completed({
+                        allowEvent: false,
+                        errorMessage: "Please complete the action in the TaskPane (click the button below to open).",
+                        errorMessageMarkdown: "Please complete the action in the TaskPane (click the button below to open).",
+                        cancelLabel: "Open TaskPane",
+                        commandId: "msgComposeOpenPaneButton"
+                    });
+                }
+            } else {
+                console.log(FormatLog("Failed to load custom properties, blocking send"));
+                // Failed to load properties, block send to be safe
+                event.completed({
+                    allowEvent: false,
+                    errorMessage: "Please complete the action in the TaskPane (click the button below to open).",
+                    errorMessageMarkdown: "Please complete the action in the TaskPane (click the button below to open).",
+                    cancelLabel: "Open TaskPane",
+                    commandId: "msgComposeOpenPaneButton"
+                });
+            }
+        });
         return;
     }
+
+
+    setTimeout(() => {
+        console.log("Timer fired AFTER completed");
+    }, 15000);
+
 
     if (clientDelayInSeconds > 0) {
         setTimeout(() => {
             logEvent2("OnMessageSend", event);
         }, clientDelayInSeconds * 1000);
     } else {
-        logEvent2("OnMessageSend", event);
+        logEvent2("OnMessageSend", event).then(() => { logEventCompleted("OnMessageSend", event);});
     }
 }
 
@@ -303,7 +330,9 @@ function OnInfoBarDismissClickedHandler(event) {
 
 // <LaunchEvent Type="OnMessageCompose" FunctionName="OnMessageComposeHandler"/>
 function OnMessageComposeHandler(event) {
-    logEvent("OnMessageCompose", event);
+    logEvent("OnMessageCompose", null).then(() => {
+        //logEventCompleted("OnMessageCompose",event);
+    });
 }
 
 // <LaunchEvent Type="OnAppointmentOrganizer" FunctionName="OnAppointmentOrganizerHandler"/>

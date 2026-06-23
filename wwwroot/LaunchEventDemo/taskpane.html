@@ -8,14 +8,7 @@
     <title>No UI</title>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.debug.js"></script>
-    <!-- <script type="module" src="taskpane.js"></script> -->
-    <script type="text/javascript">
-        const module = {};
-    </script>
-    <script type="module">
-        import { checkboxChanged } from "./taskpane.js";
-        module.checkboxChangedHandler = checkboxChanged;
-    </script>    
+    <script type="module" src="taskpane.js"></script>
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.min.css" />
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.components.min.css" />
     <link rel="stylesheet" href="taskpane.css" />
@@ -28,6 +21,17 @@
             <h1 class="ms-font-su"><img width="60" height="60" src="assets/icon-128.png" alt="LaunchEventsDemo Logo" title="LaunchEventsDemo Logo" style="vertical-align: middle;"/>&nbsp;LaunchEventDemo</h1>
             <a href="EventViewer.html" target="_blank" class="ms-font-m" style="display:inline-block;margin-top:6px;">&#128268; Open Event Viewer</a>
         </header>
+        <!-- Send Requirements Met Checkbox - shown when showCustomSmartAlertDialog is enabled -->
+        <section id="sendRequirementsSection" class="send-requirements-section" style="display: none;">
+            <div class="send-requirements-box">
+                <div class="ms-CheckBox send-requirements-checkbox">
+                    <input id="sendRequirementsMetCheckbox" type="checkbox" class="ms-CheckBox-input">
+                    <label role="checkbox" class="ms-CheckBox-field" tabindex="0" aria-checked="false" name="checkboxa">
+                        <span class="ms-Label ms-font-l">✓ Send requirements met</span>
+                    </label>
+                </div>
+            </div>
+        </section>
         <section class="ms-font-m">
         <h3>Message Information</h3>
         <div class="ms-TextField">
@@ -115,30 +119,31 @@
             </div>
             <div class="ms-CheckBox">
                 <input id="sendClientInfoCheckbox" type="checkbox" class="ms-CheckBox-input">
-                <label role="checkbox" class="ms-CheckBox-field" id="sendClientInfoCheckboxLabel">
+                <label role="checkbox" class="ms-CheckBox-field" tabindex="0" aria-checked="false" name="checkboxa">
                     <span class="ms-Label">Send user details with event to API (prepends user's display name to the event name).</span>
                 </label>
-            </div>        <div class="ms-CheckBox">
+            </div>
+            <div class="ms-CheckBox">
                 <input id="blockOnAPIFailCheckbox" type="checkbox" class="ms-CheckBox-input">
-                <label role="checkbox" class="ms-CheckBox-field" id="blockOnAPIFailCheckboxLabel">
+                <label role="checkbox" class="ms-CheckBox-field" tabindex="0" aria-checked="false" name="checkboxa">
                     <span class="ms-Label">Block send if API call fails</span>
                 </label>
             </div>
             <div class="ms-CheckBox">
                 <input id="obtainAppointmentIdCheckbox" type="checkbox" class="ms-CheckBox-input">
-                <label role="checkbox" class="ms-CheckBox-field" id="obtainAppointmentIdCheckboxLabel">
+                <label role="checkbox" class="ms-CheckBox-field" tabindex="0" aria-checked="false" name="checkboxa">
                     <span class="ms-Label">Log appointment Id of the item (if new item, force save to obtain one)</span>
                 </label>
             </div>
             <div class="ms-CheckBox">
                 <input id="showEventsOnMessageCheckbox" type="checkbox" class="ms-CheckBox-input">
-                <label role="checkbox" class="ms-CheckBox-field" id="showEventsOnMessageCheckboxLabel">
+                <label role="checkbox" class="ms-CheckBox-field" tabindex="0" aria-checked="false" name="checkboxa">
                     <span class="ms-Label">Add events to the notification bar of the displayed message.</span>
                 </label>
             </div>
             <div class="ms-CheckBox">
                 <input id="showCustomSmartAlertDialogCheckbox" type="checkbox" class="ms-CheckBox-input">
-                <label role="checkbox" class="ms-CheckBox-field" id="showCustomSmartAlertDialogCheckboxLabel">
+                <label role="checkbox" class="ms-CheckBox-field" tabindex="0" aria-checked="false" name="checkboxa">
                     <span class="ms-Label">Show custom smart alert dialog (for message and meeting send)</span>
                 </label>
             </div>
@@ -151,16 +156,16 @@
         <div id="debugConsole"></div>
     </div>
     <script type="text/javascript">
-        //import { checkboxChanged } from './taskpane.js';
         var TextFieldElements = document.querySelectorAll(".ms-TextField");
         for (var i = 0; i < TextFieldElements.length; i++) {
             new fabric['TextField'](TextFieldElements[i]);
         }
-        var CheckBoxElements = document.querySelectorAll(".ms-CheckBox");
+        // Initialize checkboxes except the send requirements one (it's initialized separately when shown)
+        var CheckBoxElements = document.querySelectorAll(".ms-CheckBox:not(.send-requirements-checkbox)");
         for (var i = 0; i < CheckBoxElements.length; i++) {
-            new fabric['CheckBox'](CheckBoxElements[i], module.checkboxChangedHandler);
-        }        
-        console.log("Fabric applied");
+            new fabric['CheckBox'](CheckBoxElements[i]);
+        }
+        console.log("Fabric components initialized");
         
         // Make separator bar resizable
         (function() {
