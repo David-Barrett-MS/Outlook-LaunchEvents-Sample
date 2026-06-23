@@ -237,6 +237,83 @@ function InitialiseAddinOption(settingName) {
   return settingChanged;
 }
 
+/**
+ * Helper function to update Fabric CheckBox visual state programmatically
+ * @param {HTMLInputElement} checkbox - The checkbox input element
+ * @param {boolean} isChecked - The desired checked state
+ */
+function updateFabricCheckboxVisualState(checkbox, isChecked) {
+  if (!checkbox) return;
+  
+  var checkboxParent = checkbox.closest('.ms-CheckBox');
+  if (checkboxParent) {
+    var label = checkboxParent.querySelector('.ms-CheckBox-field');
+    if (label) {
+      if (isChecked) {
+        label.classList.add('is-checked');
+        label.setAttribute('aria-checked', 'true');
+      } else {
+        label.classList.remove('is-checked');
+        label.setAttribute('aria-checked', 'false');
+      }
+    }
+  }
+}
+
+/**
+ * Helper function to get a custom property from the current mailbox item
+ * @param {string} propertyName - The name of the property to retrieve
+ * @param {function} callback - Callback function(value, error) where value is the property value or null if not found
+ */
+function getCustomProperty(propertyName, callback) {
+  if (!Office.context.mailbox.item) {
+    callback(null, "No mailbox item available");
+    return;
+  }
+  
+  Office.context.mailbox.item.loadCustomPropertiesAsync((asyncResult) => {
+    if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+      const customProps = asyncResult.value;
+      const value = customProps.get(propertyName);
+      callback(value, null);
+    } else {
+      callback(null, asyncResult.error.message);
+    }
+  });
+}
+
+/**
+ * Helper function to set a custom property on the current mailbox item
+ * @param {string} propertyName - The name of the property to set
+ * @param {string} propertyValue - The value to set
+ * @param {function} callback - Optional callback function(success, error)
+ */
+function setCustomProperty(propertyName, propertyValue, callback) {
+  if (!Office.context.mailbox.item) {
+    if (callback) callback(false, "No mailbox item available");
+    return;
+  }
+  
+  Office.context.mailbox.item.loadCustomPropertiesAsync((asyncResult) => {
+    if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+      const customProps = asyncResult.value;
+      customProps.set(propertyName, propertyValue);
+      
+      customProps.saveAsync((saveResult) => {
+        if (callback) {
+          if (saveResult.status === Office.AsyncResultStatus.Succeeded) {
+            callback(true, null);
+          } else {
+            callback(false, saveResult.error.message);
+          }
+        }
+      });
+    } else {
+      if (callback) callback(false, asyncResult.error.message);
+    }
+  });
+}
+
 function showAddinSetting(settingName) {
   var checkboxName = settingName + "Checkbox";
   var checkbox = document.getElementById(checkboxName);
@@ -248,23 +325,10 @@ function showAddinSetting(settingName) {
   var addinSettingValue = addinSettings.get(settingName);
   console.log(settingName + ": " + addinSettingValue);
 
-  // Set the checkbox state - Fabric will update the visual state automatically
-  checkbox.checked = (addinSettingValue == "true" || addinSettingValue == true);
-  
-  // Manually trigger Fabric to update its visual state
-  var checkboxParent = checkbox.closest('.ms-CheckBox');
-  if (checkboxParent) {
-    var label = checkboxParent.querySelector('.ms-CheckBox-field');
-    if (label) {
-      if (checkbox.checked) {
-        label.classList.add('is-checked');
-        label.setAttribute('aria-checked', 'true');
-      } else {
-        label.classList.remove('is-checked');
-        label.setAttribute('aria-checked', 'false');
-      }
-    }
-  }
+  // Set the checkbox state and update Fabric visual state
+  var isChecked = (addinSettingValue == "true" || addinSettingValue == true);
+  checkbox.checked = isChecked;
+  updateFabricCheckboxVisualState(checkbox, isChecked);
 }
 
 function applyCheckboxSetting(settingName) {
@@ -276,19 +340,7 @@ function applyCheckboxSetting(settingName) {
   addinSettings.set(settingName, checkboxChecked);
   
   // Update Fabric visual state to match checkbox state
-  var checkboxParent = checkbox.closest('.ms-CheckBox');
-  if (checkboxParent) {
-    var label = checkboxParent.querySelector('.ms-CheckBox-field');
-    if (label) {
-      if (checkboxChecked) {
-        label.classList.add('is-checked');
-        label.setAttribute('aria-checked', 'true');
-      } else {
-        label.classList.remove('is-checked');
-        label.setAttribute('aria-checked', 'false');
-      }
-    }
-  }
+  updateFabricCheckboxVisualState(checkbox, checkboxChecked);
 }
 
 function checkboxChanged() {
@@ -777,16 +829,13 @@ async function setExtendedProperties() {
   // Set extended property named daves.tips with a value set to current date and time
   console.log("Attempting to set extended property");
   const currentDateTime = new Date().toISOString();
-  // Load extended properties
-  //await sleep(2000);
-  Office.context.mailbox.item.loadCustomPropertiesAsync((asyncResult) => {
-    if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
-      const customProps = asyncResult.value;      
-      customProps.set("daves.tips", currentDateTime);
+  
+  setCustomProperty("daves.tips", currentDateTime, (success, error) => {
+    if (success) {
       console.log(`Set extended property daves.tips to ${currentDateTime}`);
-      customProps.saveAsync((asyncResult) => saveExtendedPropertiesComplete(asyncResult));
+      saveExtendedPropertiesComplete({ status: Office.AsyncResultStatus.Succeeded });
     } else {
-      console.error("Failed to load custom properties:", asyncResult.error.message);
+      console.error("Failed to save custom property:", error);
     }
   });
 }
@@ -889,23 +938,12 @@ function updateSendRequirementsSectionVisibility() {
   }
   
   const showSmartAlert = addinSettings.get("showCustomSmartAlertDialog");
-  const isInComposeMode = inComposeMode();
-  
-  console.log("Send requirements visibility check:");
-  console.log("  showCustomSmartAlertDialog setting: " + showSmartAlert);
-  console.log("  isInComposeMode: " + isInComposeMode);
-  console.log("  item exists: " + (Office.context.mailbox.item != null));
-  if (Office.context.mailbox.item) {
-    console.log("  item type: " + Office.context.mailbox.item.itemType);
-    console.log("  subject type: " + typeof Office.context.mailbox.item.subject);
-  }
-  
+  const isInComposeMode = inComposeMode();  
   const shouldShow = (showSmartAlert === "true" || showSmartAlert === true) && isInComposeMode;
   
   if (shouldShow && sendRequirementsSection.style.display === "none") {
     // First time showing - initialize Fabric CheckBox
     sendRequirementsSection.style.display = "block";
-    console.log("Send requirements section SHOWN - initializing Fabric CheckBox");
     
     const sendReqCheckboxElement = sendRequirementsSection.querySelector(".ms-CheckBox");
     if (sendReqCheckboxElement) {
@@ -935,36 +973,18 @@ function loadSendRequirementsMet() {
     return;
   }
   
-  Office.context.mailbox.item.loadCustomPropertiesAsync((asyncResult) => {
-    if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
-      const customProps = asyncResult.value;
-      const sendRequirementsMet = customProps.get("sendRequirementsMet");
-      
-      const checkbox = document.getElementById("sendRequirementsMetCheckbox");
-      
-      if (checkbox) {
-        const isChecked = (sendRequirementsMet === "true" || sendRequirementsMet === true);
-        checkbox.checked = isChecked;
-        
-        // Update Fabric visual state
-        var checkboxParent = checkbox.closest('.ms-CheckBox');
-        if (checkboxParent) {
-          var label = checkboxParent.querySelector('.ms-CheckBox-field');
-          if (label) {
-            if (isChecked) {
-              label.classList.add('is-checked');
-              label.setAttribute('aria-checked', 'true');
-            } else {
-              label.classList.remove('is-checked');
-              label.setAttribute('aria-checked', 'false');
-            }
-          }
-        }
-        
-        console.log("Send requirements met loaded: " + isChecked);
-      }
-    } else {
-      console.log("Failed to load custom properties: " + asyncResult.error.message);
+  getCustomProperty("sendRequirementsMet", (value, error) => {
+    if (error) {
+      console.log("Failed to load custom properties: " + error);
+      return;
+    }
+    
+    const checkbox = document.getElementById("sendRequirementsMetCheckbox");
+    if (checkbox) {
+      const isChecked = (value === "true" || value === true);
+      checkbox.checked = isChecked;
+      updateFabricCheckboxVisualState(checkbox, isChecked);
+      console.log("Send requirements met loaded: " + isChecked);
     }
   });
 }
@@ -984,40 +1004,14 @@ function onSendRequirementsMetChanged(event) {
   console.log("Send requirements met changed to: " + isChecked);
   
   // Update Fabric visual state
-  var checkboxParent = checkbox.closest('.ms-CheckBox');
-  if (checkboxParent) {
-    var label = checkboxParent.querySelector('.ms-CheckBox-field');
-    if (label) {
-      if (isChecked) {
-        label.classList.add('is-checked');
-        label.setAttribute('aria-checked', 'true');
-      } else {
-        label.classList.remove('is-checked');
-        label.setAttribute('aria-checked', 'false');
-      }
-    }
-  }
+  updateFabricCheckboxVisualState(checkbox, isChecked);
   
   // Save to message custom properties
-  if (!Office.context.mailbox.item) {
-    console.log("No mailbox item available");
-    return;
-  }
-  
-  Office.context.mailbox.item.loadCustomPropertiesAsync((asyncResult) => {
-    if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
-      const customProps = asyncResult.value;
-      customProps.set("sendRequirementsMet", isChecked.toString());
-      
-      customProps.saveAsync((saveResult) => {
-        if (saveResult.status === Office.AsyncResultStatus.Succeeded) {
-          console.log("Send requirements met property saved: " + isChecked);
-        } else {
-          console.log("Failed to save send requirements met property: " + saveResult.error.message);
-        }
-      });
+  setCustomProperty("sendRequirementsMet", isChecked.toString(), (success, error) => {
+    if (success) {
+      console.log("Send requirements met property saved: " + isChecked);
     } else {
-      console.log("Failed to load custom properties: " + asyncResult.error.message);
+      console.log("Failed to save send requirements met property: " + error);
     }
   });
 }

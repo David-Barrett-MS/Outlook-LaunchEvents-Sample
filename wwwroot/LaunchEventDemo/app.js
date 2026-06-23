@@ -237,8 +237,8 @@ function onMessageSendHandler(event) {
                     // Requirements not met, show smart alert
                     event.completed({
                         allowEvent: false,
-                        errorMessage: "Please complete the action in the TaskPane (click the button below to open).",
-                        errorMessageMarkdown: "Please complete the action in the TaskPane (click the button below to open).",
+                        errorMessage: "Please ensure send requirements are met in the TaskPane.",
+                        errorMessageMarkdown: "Please ensure send requirements are met in the TaskPane.",
                         cancelLabel: "Open TaskPane",
                         commandId: "msgComposeOpenPaneButton"
                     });
@@ -248,8 +248,8 @@ function onMessageSendHandler(event) {
                 // Failed to load properties, block send to be safe
                 event.completed({
                     allowEvent: false,
-                    errorMessage: "Please complete the action in the TaskPane (click the button below to open).",
-                    errorMessageMarkdown: "Please complete the action in the TaskPane (click the button below to open).",
+                    errorMessage: "Failed to validate send requirements.",
+                    errorMessageMarkdown: "Failed to validate send requirements.",
                     cancelLabel: "Open TaskPane",
                     commandId: "msgComposeOpenPaneButton"
                 });
