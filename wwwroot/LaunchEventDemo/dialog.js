@@ -6,6 +6,7 @@ Office.onReady(() => {
   document.getElementById("openLinkViaParent").onclick = openExternalURLViaParent; // Add the click event for the new button
   document.getElementById("openLinkDirect").onclick = openExternalURL; // Add the click event for the new button
   document.getElementById("externalUrlInput").value = externalLink;
+  window.title = "External Link Dialog";
 });
 
 const openExternalURLViaParent = async () => {
@@ -27,3 +28,5 @@ const openExternalURL = async () => {
     Office.context.ui.openBrowserWindow(linkToOpen);
   }
 };
+
+window.title = "External Link Dialog";

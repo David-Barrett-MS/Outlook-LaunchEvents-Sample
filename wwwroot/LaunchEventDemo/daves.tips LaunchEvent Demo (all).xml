@@ -4,7 +4,7 @@
   xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
   xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="MailApp">
   <Id>e7670756-ba14-4ac0-a6a7-a0f508a80d5b</Id>
-  <Version>1.0.0.6</Version>
+  <Version>1.0.0.7</Version>
   <ProviderName>daves.tips</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="daves.tips LaunchEventDemo"/>
@@ -72,6 +72,7 @@
                       <SourceLocation resid="Taskpane.Url"/>
                       <SupportsPinning>true</SupportsPinning>
                       <SupportsNoItemContext>true</SupportsNoItemContext>
+                      <SupportsMultiSelect>true</SupportsMultiSelect>
                     </Action>
                   </Control>
                   <!-- <Control xsi:type="Button" id="ActionButton"><Label resid="ActionButton.Label"/><Supertip><Title resid="ActionButton.Label"/><Description resid="ActionButton.Tooltip"/></Supertip><Icon><bt:Image size="16" resid="Icon.16x16"/><bt:Image size="32" resid="Icon.32x32"/><bt:Image size="80" resid="Icon.80x80"/></Icon><Action xsi:type="ExecuteFunction"><FunctionName>action</FunctionName></Action></Control> -->

@@ -170,6 +170,20 @@ Office.onReady(function(info) {
   }
   Office.context.mailbox.addHandlerAsync(Office.EventType.ItemChanged, itemChanged);
   console.log("ItemChanged event handler added");
+
+  if (Office.context.requirements.isSetSupported("Mailbox", "1.13")) {
+    Office.context.mailbox.addHandlerAsync(Office.EventType.SelectedItemsChanged, selectedItemsChanged, (asyncResult) => {
+      if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+        console.error("Failed to add SelectedItemsChanged handler:", asyncResult.error.message);
+        return;
+      }
+      console.log("SelectedItemsChanged event handler added");
+      updateSelectedItemsSubject();
+    });
+  } else {
+    console.log("Mailbox 1.13 is not supported; SelectedItemsChanged is unavailable.");
+  }
+
   updateTaskPaneUI(Office.context.mailbox.item);
   UpdateTestAvailability();
 
@@ -491,6 +505,61 @@ function itemChanged(eventArgs) {
 function showSubject(subject) {
     var messageSubject = document.getElementById("messageSubjectInput");
     messageSubject.value = subject;
+}
+
+function updateSelectedItemsSubject() {
+  if (!Office.context || !Office.context.mailbox || !Office.context.requirements.isSetSupported("Mailbox", "1.13")) {
+    return;
+  }
+
+  Office.context.mailbox.getSelectedItemsAsync((asyncResult) => {
+    if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+      console.error("Failed to get selected items:", asyncResult.error.message);
+      showSubject("");
+      return;
+    }
+
+    const selectedItems = asyncResult.value || [];
+    if (selectedItems.length === 0) {
+      console.log("No selected items");
+      showSubject("");
+      return;
+    }
+
+    const firstSelectedItem = selectedItems[0];
+    const selectedSubject = firstSelectedItem && typeof firstSelectedItem.subject === "string" ? firstSelectedItem.subject : "";
+
+    if (selectedSubject) {
+      console.log("SelectedItemsChanged fired; first selected subject: " + selectedSubject);
+      showSubject(selectedSubject);
+      return;
+    }
+
+    if (firstSelectedItem && firstSelectedItem.itemId) {
+      console.log("Selected item payload did not include subject; loading item by ID to read subject.");
+      Office.context.mailbox.loadItemByIdAsync(firstSelectedItem.itemId, (loadResult) => {
+        if (loadResult.status === Office.AsyncResultStatus.Failed) {
+          console.error("Failed to load selected item by ID:", loadResult.error.message);
+          showSubject("");
+          return;
+        }
+
+        const loadedItem = loadResult.value;
+        const loadedSubject = loadedItem && typeof loadedItem.subject === "string" ? loadedItem.subject : "";
+        console.log("Loaded selected item by ID; subject: " + loadedSubject);
+        showSubject(loadedSubject);
+      });
+      return;
+    }
+
+    console.log("SelectedItemsChanged fired but no subject was available for the first selected item.");
+    showSubject("");
+  });
+}
+
+function selectedItemsChanged(eventArgs) {
+  console.log("SelectedItemsChanged event fired");
+  updateSelectedItemsSubject();
 }
 
 function inComposeMode()

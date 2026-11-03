@@ -216,7 +216,16 @@ function onMessageSendHandler(event) {
     // Read showCustomSmartAlertDialog setting dynamically from add-in settings
     var showSmartAlert = addinSettings.get("showCustomSmartAlertDialog");
     if (showSmartAlert == "true" || showSmartAlert == true) {
-        // Check if send requirements have been met
+        // Make API call with client delay (separate from allow/block decision)
+        if (clientDelayInSeconds > 0) {
+            setTimeout(() => {
+                logEvent("OnMessageSend", null);
+            }, clientDelayInSeconds * 1000);
+        } else {
+            logEvent("OnMessageSend", null);
+        }
+        
+        // Check if send requirements have been met (to determine allow/block)
         Office.context.mailbox.item.loadCustomPropertiesAsync((asyncResult) => {
             if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
                 const customProps = asyncResult.value;
@@ -224,17 +233,9 @@ function onMessageSendHandler(event) {
                 
                 if (sendRequirementsMet === "true" || sendRequirementsMet === true) {
                     console.log(FormatLog("Send requirements met, allowing send"));
-                    // Requirements met, proceed with normal send flow
-                    if (clientDelayInSeconds > 0) {
-                        setTimeout(() => {
-                            logEvent2("OnMessageSend", event);
-                        }, clientDelayInSeconds * 1000);
-                    } else {
-                        logEvent2("OnMessageSend", event).then(() => { logEventCompleted("OnMessageSend", event);});
-                    }
+                    event.completed({ allowEvent: true });
                 } else {
                     console.log(FormatLog("Send requirements not met, blocking send"));
-                    // Requirements not met, show smart alert
                     event.completed({
                         allowEvent: false,
                         errorMessage: "Please ensure send requirements are met in the TaskPane.",
@@ -245,7 +246,6 @@ function onMessageSendHandler(event) {
                 }
             } else {
                 console.log(FormatLog("Failed to load custom properties, blocking send"));
-                // Failed to load properties, block send to be safe
                 event.completed({
                     allowEvent: false,
                     errorMessage: "Failed to validate send requirements.",
@@ -258,11 +258,7 @@ function onMessageSendHandler(event) {
         return;
     }
 
-
-    setTimeout(() => {
-        console.log("Timer fired AFTER completed");
-    }, 15000);
-
+    // No smart alert enabled, proceed with normal API call flow
 
     if (clientDelayInSeconds > 0) {
         setTimeout(() => {
